@@ -8,15 +8,15 @@ import Experience from "./components/Experience.jsx";
 import Contact from "./components/Contact.jsx";
 
 createRoot(document.getElementById("root")).render(
-  <BrowserRouter>
+  <BrowserRouter basename="/Portfolio">
     <Routes>
       <Route path="/" element={<App />}>
-        <Route index element={<Welcome />}></Route>
-        <Route path="project" element={<Project />}></Route>
-        <Route path="skill" element={<Skill />}></Route>
-        <Route path="experience" element={<Experience />}></Route>
-        <Route path="contact" element={<Contact />}></Route>
-       </Route>
-     </Routes>
-   </BrowserRouter>
+        <Route index element={<Welcome />} />
+        <Route path="project" element={<Project />} />
+        <Route path="skill" element={<Skill />} />
+        <Route path="experience" element={<Experience />} />
+        <Route path="contact" element={<Contact />} />
+      </Route>
+    </Routes>
+  </BrowserRouter>
 );
