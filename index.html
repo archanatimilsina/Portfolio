@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500&display=swap" rel="stylesheet">
+      <script src="https://kit.fontawesome.com/c5a4938a4c.js" crossorigin="anonymous"></script>
+    <title>Archana</title>
+    <style>
+      *{
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+   body{
+background-color: #F7CFD8;
+font-family: 'Baloo 2', sans-serif;
+padding: 20px;
+position: relative;
+  }
+#magicIcon
+{
+position: absolute;
+ bottom: 30px;
+ right: 50px;
+width: 100px;
+  height: auto;
+  transition: 0.3s ease-out all;
+  cursor: pointer;
+  display: none;
+}
+#magicIcon:hover{
+  transform: scale(1.9);
+  transform-origin: bottom right;
+}
+#popupOverlay,#magicOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: none;
+  justify-content: center;
+  align-items: center;
+  z-index: 1;
+}
+
+#popupBox,#magicBox {
+  background: white;
+  padding: 20px;
+  border-radius: 12px;
+  width: 260px;
+  text-align: center;
+  font-family: Arial, sans-serif;
+  animation: pop 0.2s ease;
+}
+
+.popup-buttons,.magic-buttons {
+  margin-top: 15px;
+  display: flex;
+  justify-content: space-between;
+}
+
+.popup-buttons button {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+#yesBtn,#magicYesBtn {
+  background: #4caf50;
+  color: white;
+}
+
+#noBtn,#magicNoBtn {
+  background: #f44336;
+  color: white;
+}
+
+@keyframes pop {
+  from { transform: scale(0.8); opacity: 0; }
+  to   { transform: scale(1); opacity: 1; }
+}
+
+
+    </style>
+    <script type="module" crossorigin src="/Portfolio/assets/index-BV-SHoxL.js"></script>
+    <link rel="stylesheet" crossorigin href="/Portfolio/assets/index-C6-Ugt2q.css">
+  </head>
+  <body>
+    <div id="popupOverlay">
+  <div id="popupBox">
+    <p>Do you beleive in magic???</p>
+
+    <div class="popup-buttons">
+      <button id="yesBtn">Yes</button>
+      <button id="noBtn">No</button>
+    </div>
+  </div>
+</div>
+
+<div id="magicOverlay">
+  <div id="magicBox">
+    <p>Are you my master??</p>
+    <div class="magic-buttons">
+      <button id="magicYesBtn">Yes</button>
+      <button id="magicNoBtn">No</button>
+    </div>
+  </div>
+</div>
+
+<img src="/Portfolio/assets/goto-DDt0NEx_.png" alt="" id="magicIcon" onclick=getResult()>
+    <div id="root">
+      
+    </div>
+    <script>
+      document.addEventListener("keydown", (e) => {
+  if (e.key === "Tab" && e.shiftKey) {
+    const magicIcon = document.getElementById("magicIcon");
+    magicIcon.style.display = "block";
+  }
+});
+
+  function getResult() {
+    document.getElementById("popupOverlay").style.display = "flex";
+  }
+
+  document.getElementById("yesBtn").onclick = () => {
+    document.getElementById("popupOverlay").style.display = "none";
+
+  };
+
+  document.getElementById("noBtn").onclick = () => {
+    alert("You clicked NO!");
+    document.getElementById("popupOverlay").style.display = "none";
+  };
+
+
+    </script>
+  </body>
+</html>
