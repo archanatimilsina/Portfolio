@@ -1,2 +1,9 @@
-http://localhost:5173/
-# use this url to run react
+# My Portfolio
+
+### **Tools, Languages used**
+-docker
+-React
+-HTMl, CSS, javascript
+
+**Visit the site**
+https://archanatimilsina.github.io/Portfolio/
