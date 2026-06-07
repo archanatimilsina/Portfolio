@@ -1,0 +1,24 @@
+# Core Framework & APIs
+Django==6.0
+djangorestframework==3.17.1
+django-cors-headers==4.9.0
+
+# Authentication
+djangorestframework_simplejwt==5.5.1
+PyJWT==2.12.1
+
+# Image Handling & Environment
+pillow==12.2.0
+python-dotenv==1.2.2
+
+# HTTP Requests
+requests==2.32.4
+urllib3==2.5.0
+certifi==2025.4.26
+charset-normalizer==3.4.2
+idna==3.10
+
+# Django Sub-dependencies
+asgiref==3.11.0
+sqlparse==0.5.5
+tzdata==2025.3

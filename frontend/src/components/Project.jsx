@@ -1,58 +1,44 @@
-import "../assets/css/Project.css";
+import React from 'react';
+import { useNavigate } from 'react-router-dom';
 
-function Project() {
+const BackButtonPage = () => {
+  const navigate = useNavigate();
+
+  const handleGoBack = () => {
+    navigate(-1);
+  };
+
   return (
-    <>
-      <div id="projects">
-        <div className="projectBox">
-          <h2>My Projects</h2>
-          <div className="projectSliderBox">
-<div className="projectList">
-<h3>Swiftstay</h3>
-<p className="projectNote">Online Hotel services reservation system</p>
-<button className="github-button">Github</button>
-<button className="checkDescription">Check Description</button>
-</div>
-
-<div className="projectList">
-<h3>Aahar</h3>
-<p className="projectNote">Online Local food Seller</p>
-<button className="github-button">Github</button>
-<button className="checkDescription">Check Description</button>
-</div>
-
-<div className="projectList">
-<h3>Ownah</h3>
-<p className="projectNote">Task and Employee Management System </p>
-<button className="github-button">Github</button>
-<button className="checkDescription">Check Description</button>
-</div>
-
-<div className="projectList">
-<h3>Menthealth</h3>
-<p className="projectNote">Online mental Health support system</p>
-<button className="github-button">Github</button>
-<button className="checkDescription">Check Description</button>
-</div>
-
-<div className="projectList">
-<h3>Tasksphere</h3>
-<p className="projectNote">Task and Employee Management System </p>
-<button className="github-button">Github</button>
-<button className="checkDescription">Check Description</button>
-</div>
-
-<div className="projectList">
-<h3>SoulAPI</h3>
-<p className="projectNote">API practice project</p>
-<button className="github-button">Github</button>
-<button className="checkDescription">Check Description</button>
-</div>
-          </div>
-        </div>
-
-      </div>
+       <>
+    <div style={styles.container}>
+                  <div>Just checking!!!You are in Project Page</div>
+<br /><hr />
+      <button onClick={handleGoBack} style={styles.button}>
+        Go Back
+      </button>
+    </div>
     </>
   );
-}
-export default Project;
+};
+
+const styles = {
+  container: {
+    fontFamily: 'sans-serif',
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    height: '100vh',
+    backgroundColor: '#f4f4f9',
+  },
+  button: {
+    padding: '15px 30px',
+    fontSize: '18px',
+    cursor: 'pointer',
+    backgroundColor: '#007bff',
+    color: 'white',
+    border: 'none',
+    borderRadius: '8px',
+  }
+};
+
+export default BackButtonPage;

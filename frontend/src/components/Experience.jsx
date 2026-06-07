@@ -1,38 +1,45 @@
-import "../assets/css/Experience.css"
-function Experience() {
-  const professionalDev=[
-  {name: "Mentorship", duration: "2 months", company:"Jankari Tech",subject:"Test Automation",link:"https://drive.google.com/file/d/1uZJbIsYGSxLSkGsdx_GuVo6H33pmEEmr/view"},
-  {name: "Internship", duration: "3 months", company:"Xdezo Academy",subject:"Full Stack Web Development",link:"https://drive.google.com/file/d/1b8dPLHQR36n5ZixoX0qEstRi7OHu7IqE/view"},
-  {name: "Course", duration: "3 months", company:"Xdezo Academy",subject:"Full Stack Web Development",link:"https://drive.google.com/file/d/1Xgit-dCH7ehOVifsh4YkENpfZMGFucnN/view"},
-  {name: "Fellowship", duration: "6 months", company:"WLiT",subject:"personal skills + technical skills",link:"https://drive.google.com/file/d/1cJsRaZkDpZytJ10yFp0Zd7eK_x_Hj4Si/view"},
-  {name: "Session", duration: "1 Day", company:"GCES girls tech",subject:"Design Thinking and UI/UX",link:"https://drive.google.com/file/d/1GCMMNwovHVVldKWNrj1Y3tMCMPh9CYw2/view"},
-  {name: "Online Course", duration: "-", company:"Simplilearn",subject:"Javascript",link:"https://drive.google.com/file/d/1ytlPLBAWXP8dGCMttW5SL7M5cpflvWYL/view"}
-  ]
-  function openLink(link){
-window.open(link ,"_blank");
-  }
+import React from 'react';
+import { useNavigate } from 'react-router-dom';
+
+const BackButtonPage = () => {
+  const navigate = useNavigate();
+
+  const handleGoBack = () => {
+    navigate(-1);
+  };
 
   return (
-    <>
-      <div id="experience">
-        <div className="experienceBox">
-          <h2>Professional Development</h2>
-          <div className="experienceSliderBox">
-            {professionalDev.map((list,index)=>(
-              <div className="professionalDevList" key={index}>
-            <h1>{list.name}</h1>
-            <p><b>Duration:</b> {list.duration}</p>
-            <p><b>Company:</b> {list.company}</p>
-            <p><b>Subject:</b> {list.subject}</p>
-            <button id="checkCertificate" onClick={openLink(list.link)}>Check Certificate</button>
-             </div>
-            )
-           ) 
-            }
-          </div>
-        </div>
-      </div>
+      <>
+    <div style={styles.container}>
+          <div>Just checking!!!You are in Experience Page</div>
+<br /><hr />
+      <button onClick={handleGoBack} style={styles.button}>
+        Go Back
+      </button>
+    </div>
     </>
   );
-}
-export default Experience;
+};
+
+const styles = {
+  container: {
+    fontFamily: 'sans-serif',
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    height: '100vh',
+    backgroundColor: '#6e6ef5',
+    
+  },
+  button: {
+    padding: '15px 30px',
+    fontSize: '18px',
+    cursor: 'pointer',
+    backgroundColor: '#007bff',
+    color: 'white',
+    border: 'none',
+    borderRadius: '8px',
+  }
+};
+
+export default BackButtonPage;
