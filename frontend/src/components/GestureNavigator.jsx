@@ -5,7 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { DollarRecognizer } from "../js/dollarRecognizer";
 import { useGestureCanvas } from "../js/useGestureCanvas";
 import yaml from "js-yaml";
-
+const API_BASE = import.meta.env.VITE_API_URL;
 const BUILT_IN_TEMPLATES = {
   circle: [
     [
@@ -227,12 +227,6 @@ export default function GestureNavigator() {
     </>
   );
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// GestureRecorder — dev-only component to record your own templates
-// Usage: temporarily render <GestureRecorder /> on any page,
-//        draw a gesture, copy the logged JSON into BUILT_IN_TEMPLATES above.
-// ─────────────────────────────────────────────────────────────────────────────
 
 export function GestureRecorder() {
   const canvasRef    = useRef(null);

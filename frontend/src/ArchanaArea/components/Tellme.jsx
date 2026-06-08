@@ -1,9 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import styled, { keyframes, css, createGlobalStyle } from 'styled-components';
 
-// ==========================================
-// GLOBAL STYLES
-// ==========================================
+const API_BASE = import.meta.env.VITE_API_URL;
 const GlobalStyle = createGlobalStyle`
   @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,800;1,700&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@300;400&display=swap');
 
@@ -24,9 +22,6 @@ const GlobalStyle = createGlobalStyle`
   ::-webkit-scrollbar-thumb { background: #c4b89a; border-radius: 3px; }
 `;
 
-// ==========================================
-// DESIGN TOKENS
-// ==========================================
 const T = {
   ink:     '#1a1410',
   muted:   '#7c6f5e',
@@ -39,9 +34,6 @@ const T = {
   amber:   '#c28a1a',
 };
 
-// ==========================================
-// ANIMATIONS
-// ==========================================
 const fadeUp = keyframes`
   from { opacity: 0; transform: translateY(20px); }
   to   { opacity: 1; transform: translateY(0); }
@@ -63,14 +55,10 @@ const spinOnce = keyframes`
   to   { transform: rotate(360deg); }
 `;
 
-// ==========================================
-// API — matches urls.py exactly
-// List/Create : GET|POST /api/daylogs/
-// Detail      : GET|PUT|DELETE /api/daylogs/:id/
-// ==========================================
+
 const API = {
-  list:   '/api/daylogs/',
-  detail: (id) => `/api/daylogs/${id}/`,
+  list:   `${API_BASE}/api/daylogs/`,
+  detail: (id) => `${API_BASE}//api/daylogs/${id}/`,
 };
 
 const MOODS = ['Happy', 'Okay', 'Neutral', 'Sad', 'Wired', 'Tired'];
@@ -99,9 +87,7 @@ const fmtDate = (str) =>
     weekday: 'long', month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC',
   });
 
-// ==========================================
-// MAIN COMPONENT
-// ==========================================
+
 export default function MyDayLogPage() {
   const [entries,    setEntries]    = useState([]);
   const [formData,   setFormData]   = useState(EMPTY_FORM);
@@ -116,7 +102,6 @@ export default function MyDayLogPage() {
 
   const fileRef = useRef(null);
 
-  // ── fetch ────────────────────────────────────
   useEffect(() => { fetchEntries(); }, []);
 
   const fetchEntries = async () => {
@@ -138,7 +123,6 @@ export default function MyDayLogPage() {
     setTimeout(() => setToast(null), 3000);
   };
 
-  // ── modal helpers ────────────────────────────
   const openAdd = () => {
     setFormData(EMPTY_FORM);
     setIsEditing(false);
@@ -158,7 +142,6 @@ export default function MyDayLogPage() {
     });
     setIsEditing(true);
     setCurrentId(entry.id);
-    // Show existing image as preview (it's an absolute URL from the server)
     setLocalPreview(entry.url || '');
     if (fileRef.current) fileRef.current.value = '';
     setIsModalOpen(true);
@@ -170,11 +153,9 @@ export default function MyDayLogPage() {
     if (fileRef.current) fileRef.current.value = '';
   }, []);
 
-  // ── file selection ───────────────────────────
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    // Revoke any old blob preview
     if (localPreview.startsWith('blob:')) URL.revokeObjectURL(localPreview);
     const blob = URL.createObjectURL(file);
     setLocalPreview(blob);
@@ -186,10 +167,7 @@ export default function MyDayLogPage() {
     setFormData(p => ({ ...p, [name]: value }));
   };
 
-  // ── submit: POST (multipart) or PUT (multipart) ──
-  // DayLog uses MultiPartParser on the backend, so we always send FormData.
-  // Fields match DayLogSerializer:
-  //   title, date, mood, source, remote_url, file (write_only, maps to image_file)
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.title.trim() || !formData.date) return;
@@ -203,11 +181,9 @@ export default function MyDayLogPage() {
     const hasNewFile = fileRef.current?.files?.[0];
 
     if (hasNewFile) {
-      // Local file upload — backend sets source='local' automatically via validate()
       fd.append('file', fileRef.current.files[0]);
       fd.append('source', 'local');
     } else {
-      // Remote URL path
       fd.append('source',     'remote');
       fd.append('remote_url', formData.remote_url || '');
     }
@@ -237,7 +213,6 @@ export default function MyDayLogPage() {
     }
   };
 
-  // ── delete ───────────────────────────────────
   const handleDelete = async (entry) => {
     if (!window.confirm('Remove this memory permanently?')) return;
     try {
@@ -254,21 +229,16 @@ export default function MyDayLogPage() {
     (a, b) => new Date(b.date) - new Date(a.date)
   );
 
-  // preview to show in modal: new blob > existing server url
   const previewSrc = localPreview || (formData.source === 'remote' ? formData.remote_url : '');
 
-  // ==========================================
-  // RENDER
-  // ==========================================
+ 
   return (
     <>
       <GlobalStyle />
       <PageWrap>
 
-        {/* Toast */}
         {toast && <Toast $type={toast.type}>{toast.msg}</Toast>}
 
-        {/* Hero */}
         <Hero>
           <Eyebrow>Daily Chronicle</Eyebrow>
           <HeroTitle>My <em>Day Log</em></HeroTitle>
@@ -280,10 +250,8 @@ export default function MyDayLogPage() {
           </AddBtn>
         </Hero>
 
-        {/* Error state */}
         {fetchError && <ErrorBanner>{fetchError}</ErrorBanner>}
 
-        {/* Loading */}
         {loading && (
           <LoadRow>
             <LoadDot $d="0s" /><LoadDot $d=".15s" /><LoadDot $d=".3s" />
@@ -291,7 +259,6 @@ export default function MyDayLogPage() {
           </LoadRow>
         )}
 
-        {/* Empty */}
         {!loading && !fetchError && entries.length === 0 && (
           <EmptyFrame onClick={openAdd}>
             <EmptyTitle>Your archive is empty.</EmptyTitle>
@@ -299,7 +266,6 @@ export default function MyDayLogPage() {
           </EmptyFrame>
         )}
 
-        {/* Grid */}
         {sorted.length > 0 && (
           <Masonry>
             {sorted.map((entry, i) => (
@@ -314,7 +280,6 @@ export default function MyDayLogPage() {
           </Masonry>
         )}
 
-        {/* Modal */}
         {isModalOpen && (
           <Overlay onClick={closeModal}>
             <Modal onClick={e => e.stopPropagation()}>
@@ -346,7 +311,6 @@ export default function MyDayLogPage() {
                   </Field>
                 </FRow>
 
-                {/* Image source */}
                 <Field>
                   <FLabel>Image (optional)</FLabel>
                   <UploadRow>
@@ -360,7 +324,6 @@ export default function MyDayLogPage() {
                   </UploadRow>
                 </Field>
 
-                {/* Remote URL — only show if no local file chosen */}
                 {!fileRef.current?.files?.[0] && (
                   <Field>
                     <FLabel>Or Remote Image URL</FLabel>
@@ -374,7 +337,6 @@ export default function MyDayLogPage() {
                   </Field>
                 )}
 
-                {/* Preview */}
                 {previewSrc && (
                   <PreviewBox>
                     <img src={previewSrc} alt="Preview" />
@@ -402,9 +364,7 @@ export default function MyDayLogPage() {
   );
 }
 
-// ==========================================
-// POLAROID CARD — stable tilt via useMemo
-// ==========================================
+
 function PolaroidCard({ entry, index, onEdit, onDelete }) {
   const tilt = React.useMemo(() => (((entry.id * 7919) % 100) / 100 - 0.5) * 7, [entry.id]);
   const tapePos = entry.id % 2 === 0 ? 'left' : 'right';
@@ -444,9 +404,7 @@ function PolaroidCard({ entry, index, onEdit, onDelete }) {
   );
 }
 
-// ==========================================
-// STYLED COMPONENTS
-// ==========================================
+
 const PageWrap = styled.div`
   max-width: 1320px;
   margin: 0 auto;
@@ -470,7 +428,6 @@ const Toast = styled.div`
   box-shadow: 0 8px 30px rgba(0,0,0,0.15);
 `;
 
-// ── Hero ────────────────────────────────────
 const Hero = styled.header`
   text-align: center;
   margin-bottom: 6rem;
@@ -611,7 +568,6 @@ const EmptyHint = styled.p`
   opacity: 0.7;
 `;
 
-// ── Masonry & Cards ─────────────────────────
 const Masonry = styled.div`
   columns: 3;
   column-gap: 2rem;
@@ -761,7 +717,6 @@ const CardTitle = styled.h3`
   line-height: 1.4;
 `;
 
-// ── Modal ────────────────────────────────────
 const Overlay = styled.div`
   position: fixed;
   inset: 0;

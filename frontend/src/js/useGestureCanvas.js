@@ -1,10 +1,10 @@
 import { useEffect, useRef, useCallback } from "react";
 
 
-const TAP_WINDOW_MS   = 600;   // three taps must land within this window
-const TAP_REQUIRED    = 3;     // number of taps to activate
-const STROKE_PAUSE_MS = 800;   // idle time after last pointerup = gesture complete
-const MIN_POINTS      = 5;     // ignore accidental micro-strokes
+const TAP_WINDOW_MS   = 600;  
+const TAP_REQUIRED    = 3;    
+const STROKE_PAUSE_MS = 800;   
+const MIN_POINTS      = 5;     
 
 export function useGestureCanvas({ onGesture }) {
   const canvasRef        = useRef(null);

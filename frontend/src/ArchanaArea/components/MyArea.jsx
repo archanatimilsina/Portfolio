@@ -26,8 +26,8 @@ const C = {
   gold:   "#d4af37",
   accent: "#52d68a",
 };
-
-const BASE = '/api';
+const API_BASE = import.meta.env.VITE_API_URL;
+const BASE = `${API_BASE}/api`;
 const verifySecret = async (field, value) => {
   try {
     const res = await fetch('/api/verify-secret/', {
@@ -347,10 +347,8 @@ export default function MyArea({ onBack }) {
           </TBRight>
         </TopBar>
 
-        {/* SIDEBAR */}
         {sidebarRendered && SidebarMarkup}
 
-        {/* MAIN */}
         <Main $shifted={sidebarOpen}>
           <Hero>
             <HeroChip><span />Restricted Zone</HeroChip>
@@ -360,7 +358,6 @@ export default function MyArea({ onBack }) {
               🔑 Type <strong>9988</strong> to unlock the sidebar
             </HeroHint>
 
-            {/* ── FLOATING IMAGES ── */}
             <FloatArea>
               {IMGS.map((img, i) => (
                 <ImgWrap key={img.seed} style={{top:`${img.top}%`,left:`${img.left}%`}}>
@@ -383,7 +380,6 @@ export default function MyArea({ onBack }) {
 
           <DataSection>
 
-            {/* ── loading skeleton ── */}
             {dataLoading && (
               <LoadingRow>
                 <LoadSpinner />
@@ -393,7 +389,6 @@ export default function MyArea({ onBack }) {
 
             {!dataLoading && (
               <>
-                {/* ════ PROJECTS ════ */}
                 {projects.length > 0 && (
                   <DataBlock>
                     <BlockHeader>
@@ -513,7 +508,6 @@ export default function MyArea({ onBack }) {
                   </DataBlock>
                 )}
 
-                {/* ── empty state ── */}
                 {projects.length === 0 && pdItems.length === 0 && (
                   <EmptyState>
                     <EmptyIcon>🌱</EmptyIcon>
@@ -531,9 +525,6 @@ export default function MyArea({ onBack }) {
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-//  STYLED COMPONENTS
-// ─────────────────────────────────────────────────────────────────────────────
 
 const PageWrap = styled.div`
   min-height:100vh;
@@ -549,7 +540,6 @@ const PageWrap = styled.div`
   }
 `;
 
-/* TOP BAR */
 const TopBar  = styled.header`
   position:fixed;top:0;left:0;right:0;height:56px;
   background:${C.bg};border-bottom:2px solid ${C.dark};
@@ -586,7 +576,6 @@ const StatusBadge = styled.div`
     animation:${pulse} 2s ease infinite;}
 `;
 
-/* SIDEBAR */
 const Sidebar = styled.aside`
   position:fixed;top:56px;left:0;bottom:0;width:268px;
   background:${C.dark};
@@ -657,7 +646,6 @@ const SBAvatar = styled.div`
 const SBName = styled.div`font-family:'Syne',sans-serif;font-size:.83rem;font-weight:700;color:${C.bg};`;
 const SBRole = styled.div`font-size:.7rem;color:rgba(246,245,240,.3);margin-top:.1rem;`;
 
-/* MAIN */
 const Main = styled.main`
   margin-top:56px;
   margin-left:${p=>p.$shifted?'268px':'0'};
@@ -666,7 +654,6 @@ const Main = styled.main`
   transition:margin-left .45s cubic-bezier(.34,1.56,.64,1);
 `;
 
-/* HERO */
 const Hero = styled.div`
   height:calc(100vh - 56px);
   position:relative;display:flex;flex-direction:column;
@@ -703,7 +690,6 @@ const HeroHint = styled.div`
   strong{color:${C.dark};margin-left:4px;}
 `;
 
-/* FLOATING IMAGES */
 const FloatArea = styled.div`position:absolute;inset:0;z-index:1;`;
 const ImgWrap   = styled.div`
   position:absolute;
@@ -733,7 +719,6 @@ const ImgLabel  = styled.div`
   opacity:0;transition:opacity .2s ease;pointer-events:none;
 `;
 
-/* BURST FX */
 const BurstCore = styled.div`
   position:fixed;left:50%;top:50%;width:22px;height:22px;border-radius:50%;
   background:radial-gradient(circle,${C.gold},${C.green},transparent);
@@ -754,7 +739,6 @@ const Ring      = styled.div`
   z-index:790;pointer-events:none;
 `;
 
-/* PLACEHOLDER */
 const PlaceholderWrap  = styled.div`
   display:flex;flex-direction:column;align-items:center;justify-content:center;
   min-height:calc(100vh - 56px);padding:3rem;text-align:center;
@@ -773,7 +757,6 @@ const PlaceholderBtn   = styled.button`
   &:hover{background:${C.green};border-color:${C.green};}
 `;
 
-// ─── Data Section ─────────────────────────────────────────────────────────────
 
 const DataSection = styled.section`
   position:relative;z-index:2;
@@ -782,7 +765,6 @@ const DataSection = styled.section`
   border-top:2px solid ${C.dark};
 `;
 
-/* Loading */
 const LoadingRow = styled.div`
   display:flex;align-items:center;justify-content:center;gap:1rem;
   padding:4rem 0;
@@ -799,7 +781,6 @@ const LoadLabel = styled.p`
   text-transform:uppercase;letter-spacing:2px;color:${C.soft};
 `;
 
-/* Block */
 const DataBlock = styled.div`
   margin-bottom:4rem;
   animation:${fadeUp} .6s ease both;
@@ -831,7 +812,6 @@ const BlockCTA = styled.button`
   &:hover{background:${C.green};color:${C.white};}
 `;
 
-/* ─── Projects Grid ── */
 const ProjectsGrid = styled.div`
   display:grid;
   grid-template-columns:repeat(auto-fill, minmax(300px, 1fr));
@@ -889,7 +869,6 @@ const PCDate = styled.span`
   font-family:'Syne',sans-serif;font-weight:600;letter-spacing:.05em;
 `;
 
-/* ─── Professional Dev List ── */
 const PDList = styled.div`
   display:flex;flex-direction:column;gap:.9rem;
 `;
@@ -964,7 +943,6 @@ const PDCertLink = styled.a`
   &:hover{background:${C.muted};}
 `;
 
-/* Empty state */
 const EmptyState = styled.div`
   display:flex;flex-direction:column;align-items:center;
   padding:5rem 2rem;gap:.75rem;text-align:center;

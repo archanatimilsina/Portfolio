@@ -1,9 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import styled, { keyframes, createGlobalStyle } from 'styled-components';
 
-// ==========================================
-// GLOBAL STYLES
-// ==========================================
+const API_BASE = import.meta.env.VITE_API_URL;
 const GlobalStyle = createGlobalStyle`
   @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@300;400&display=swap');
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -14,9 +12,7 @@ const GlobalStyle = createGlobalStyle`
   }
 `;
 
-// ==========================================
-// DESIGN TOKENS
-// ==========================================
+
 const C = {
   white:    '#ffffff',
   border:   '#e4e4e7',
@@ -29,9 +25,7 @@ const C = {
   greenLt:  '#f0fdf8',
 };
 
-// ==========================================
-// ANIMATIONS
-// ==========================================
+
 const fadeUp = keyframes`
   from { opacity: 0; transform: translateY(10px); }
   to   { opacity: 1; transform: translateY(0); }
@@ -42,38 +36,29 @@ const dotBounce = keyframes`
   40%           { transform: translateY(-5px); }
 `;
 
-// ==========================================
-// API — matches urls.py exactly
-// List/Create : GET|POST /api/wishes/
-// Detail      : GET|PUT|PATCH|DELETE /api/wishes/:id/
-// ==========================================
+
 const API = {
-  list:   '/api/wishes/',
-  detail: (id) => `/api/wishes/${id}/`,
+  list:   `${API_BASE}/api/wishes/`,
+  detail: (id) => `${API_BASE}//api/wishes/${id}/`,
 };
 
 const EMPTY_NEW  = { emoji: '', wish: '' };
 
-// ==========================================
-// MAIN COMPONENT
-// ==========================================
+
 export default function Wishlist() {
   const [wishes,     setWishes]     = useState([]);
   const [loading,    setLoading]    = useState(false);
   const [fetchError, setFetchError] = useState('');
   const [toast,      setToast]      = useState(null);
 
-  // Create panel state
   const [isCreating, setIsCreating] = useState(false);
   const [newWish,    setNewWish]    = useState(EMPTY_NEW);
   const [creating,   setCreating]   = useState(false);
 
-  // Edit inline state
   const [editingId,  setEditingId]  = useState(null);
   const [editWish,   setEditWish]   = useState(EMPTY_NEW);
   const [updating,   setUpdating]   = useState(false);
 
-  // ── fetch ──────────────────────────────
   useEffect(() => { fetchWishes(); }, []);
 
   const fetchWishes = async () => {
@@ -95,9 +80,7 @@ export default function Wishlist() {
     setTimeout(() => setToast(null), 3000);
   };
 
-  // ── CREATE — POST /api/wishes/ ─────────
-  // Sends: { emoji, wish }
-  // DreamWishSerializer requires 'wish'; 'emoji' defaults to "✨" server-side
+
   const handleCreate = async (e) => {
     e.preventDefault();
     if (!newWish.wish.trim()) return;
@@ -117,7 +100,6 @@ export default function Wishlist() {
         throw new Error(key ? `${key}: ${Array.isArray(err[key]) ? err[key][0] : err[key]}` : 'Failed to save.');
       }
       const created = await res.json();
-      // Prepend — matches backend ordering ['-created_at']
       setWishes(p => [created, ...p]);
       setNewWish(EMPTY_NEW);
       setIsCreating(false);
@@ -129,14 +111,11 @@ export default function Wishlist() {
     }
   };
 
-  // ── START EDIT ─────────────────────────
   const startEditing = (item) => {
     setEditingId(item.id);
     setEditWish({ emoji: item.emoji, wish: item.wish });
   };
 
-  // ── UPDATE — PUT /api/wishes/:id/ ──────
-  // Sends: { emoji, wish } — full object required for PUT
   const handleUpdate = async (e, id) => {
     e.preventDefault();
     if (!editWish.wish.trim()) return;
@@ -166,7 +145,6 @@ export default function Wishlist() {
     }
   };
 
-  // ── DELETE — DELETE /api/wishes/:id/ ───
   const handleDelete = async (id) => {
     if (!window.confirm('Remove this wish permanently?')) return;
     try {
@@ -179,9 +157,7 @@ export default function Wishlist() {
     }
   };
 
-  // ==========================================
-  // RENDER
-  // ==========================================
+  
   return (
     <>
       <GlobalStyle />
@@ -201,7 +177,6 @@ export default function Wishlist() {
           </PanelButton>
         </HeaderRow>
 
-        {/* CREATE FORM */}
         {isCreating && (
           <FormBlock onSubmit={handleCreate}>
             <FormGroup $flex="0.12">
@@ -230,10 +205,8 @@ export default function Wishlist() {
           </FormBlock>
         )}
 
-        {/* ERROR */}
         {fetchError && <ErrorBanner>{fetchError}</ErrorBanner>}
 
-        {/* LOADING */}
         {loading && (
           <LoadRow>
             <Dot $d="0s" /><Dot $d=".15s" /><Dot $d=".3s" />
@@ -241,7 +214,6 @@ export default function Wishlist() {
           </LoadRow>
         )}
 
-        {/* EMPTY */}
         {!loading && !fetchError && wishes.length === 0 && (
           <EmptyState>
             <span>✨</span>
@@ -249,7 +221,6 @@ export default function Wishlist() {
           </EmptyState>
         )}
 
-        {/* GRID */}
         {wishes.length > 0 && (
           <WishGrid>
             {wishes.map((w, i) => {
@@ -257,7 +228,6 @@ export default function Wishlist() {
               return (
                 <WishCard key={w.id} style={{ animationDelay: `${i * 0.04}s` }}>
                   {isItemEditing ? (
-                    /* INLINE EDIT FORM */
                     <EditForm onSubmit={(e) => handleUpdate(e, w.id)}>
                       <EditRow>
                         <Input
@@ -294,7 +264,6 @@ export default function Wishlist() {
                       </EditActions>
                     </EditForm>
                   ) : (
-                    /* READ VIEW */
                     <>
                       <WishEmoji>{w.emoji || '✨'}</WishEmoji>
                       <WishText>{w.wish}</WishText>
@@ -315,9 +284,7 @@ export default function Wishlist() {
   );
 }
 
-// ==========================================
-// STYLED COMPONENTS
-// ==========================================
+
 const ContentWrap = styled.div`
   padding: 3.5rem 3rem 6rem;
   max-width: 1280px;

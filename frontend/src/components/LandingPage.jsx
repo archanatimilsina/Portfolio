@@ -6,8 +6,8 @@ import ProjectSpecificationPage from './projectDescriptionPage';
 import ProfessionalCredential from './ProfessionalCredential';
 import SecretWorld from '../ArchanaArea/components/MyArea';
 
-
-const BASE = '/api';
+const API_BASE = import.meta.env.VITE_API_URL;
+const BASE = `${API_BASE}/api`;
 
 const skills = [
   { title: "🖥 Languages",            pills: ["C", "C++", "Python", "PHP"] },
@@ -46,17 +46,6 @@ const verifySecret = async (field, value) => {
   }
 };
 
-// const GESTURE_ROUTES = [
-//   { gesture: 'circle',   action: 'scrollTop',   label: 'Top'         },
-//   { gesture: 'check',    action: 'projects',     label: 'Projects'    },
-//   { gesture: 'caret',    action: 'credentials',  label: 'Credentials' },
-//   { gesture: 'triangle', action: 'skills',       label: 'Skills'      },
-//   { gesture: 'arrow',    action: 'github',       label: 'GitHub'      },
-// ];
-
-// $1 Recognizer config — kept as comments per original
-// const NUM_POINTS  = 64;
-// ...
 
 
 const float = keyframes`
@@ -167,7 +156,6 @@ const GithubBadge = styled.a`
 `;
 
 
-/* Toast */
 const GestureToast = styled.div`
   position: fixed;
   bottom: 2.25rem;
@@ -194,7 +182,6 @@ const ToastScore = styled.span`
   font-weight: 600;
 `;
 
-/* Gesture disabled banner */
 const GestureDisabledBanner = styled.div`
   position: fixed;
   bottom: 1.5rem;
@@ -752,7 +739,6 @@ export default function PortfolioLanding() {
   const [showGestureModal, setShowGestureModal] = useState(false);
   const [showSecretGate,   setShowSecretGate]   = useState(false);
   const [showSecretWorld,  setShowSecretWorld]  = useState(false);
-  // const disabledBannerTimer = useRef(null);
 
   const [gestureNavStatus, setGestureNavStatus] = useState(
     () => localStorage.getItem('gestureNav') || 'inactive'
@@ -765,7 +751,6 @@ useEffect(() => {
     if (!/^[0-9]$/.test(e.key)) return;
     if (['INPUT', 'TEXTAREA'].includes(document.activeElement?.tagName)) return;
     bufRef.current = (bufRef.current + e.key).slice(-4);
-    // Try verifying after every 4 digits typed
     if (bufRef.current.length === 4) {
       const allowed = await verifySecret('gate', bufRef.current);
       if (allowed) { bufRef.current = ''; setShowSecretGate(true); }

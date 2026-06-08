@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import styled, { keyframes, createGlobalStyle } from 'styled-components';
-
+const API_BASE = import.meta.env.VITE_API_URL;
 
 const GlobalStyle = createGlobalStyle`
   @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@300;400&display=swap');
@@ -33,8 +33,8 @@ const fadeUp = keyframes`
 
 
 const API = {
-  list:   '/api/hobbies/',
-  detail: (id) => `/api/hobbies/${id}/`,
+  list:   `${API_BASE}//api/hobbies/`,
+  detail: (id) => `${API_BASE}//api/hobbies/${id}/`,
 };
 
 const EMPTY_FORM = { emoji: '', title: '', text: '' };

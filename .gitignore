@@ -23,3 +23,6 @@ fronted/build/
 /backend/Dockerfile
 /backend/seed.py
 .DS_Store
+
+backend/.env
+backend/data.json

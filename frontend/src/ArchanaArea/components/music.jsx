@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import styled, { keyframes, createGlobalStyle, css} from 'styled-components';
+const API_BASE = import.meta.env.VITE_API_URL;
 
-
-const ENDPOINT = '/api/music-vibes/';
+const ENDPOINT = `${API_BASE}/api/music-vibes/`;
 
 const C = {
   bg:         '#0d0d0f',
@@ -171,8 +171,7 @@ const Btn = styled.button`
   &:disabled { opacity: 0.45; cursor: not-allowed; }
 `;
 
-// FIX: pointer-events properly handled via $hidden prop so invisible
-// action buttons don't block mouse events on the card content beneath
+
 const IconBtn = styled.button`
   width: 28px;
   height: 28px;
@@ -196,7 +195,6 @@ const IconBtn = styled.button`
   &:disabled { opacity: 0.45; cursor: not-allowed; pointer-events: none; }
 `;
 
-// ─── FORM PANEL ──────────────────────────────────────────────────────────────
 const FormPanel = styled.div`
   background: ${C.surface};
   border: 1.5px solid ${C.border};
@@ -304,14 +302,12 @@ const RetryLink = styled.span`
   cursor: pointer;
 `;
 
-// ─── GRID ─────────────────────────────────────────────────────────────────────
 const MusicGrid = styled.div`
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   gap: 1.1rem;
 `;
 
-// ─── CARD ─────────────────────────────────────────────────────────────────────
 const MusicCard = styled.div`
   background: ${C.surface};
   border: 1.5px solid ${C.border};
@@ -332,8 +328,7 @@ const MusicCard = styled.div`
   }
 `;
 
-// FIX: pointer-events: none when hidden so invisible buttons don't
-// intercept clicks on card text/icons beneath them
+
 const CardActions = styled.div`
   position: absolute;
   top: 1rem;
@@ -349,7 +344,6 @@ const CardActions = styled.div`
     pointer-events: all;
   }
 
-  /* FIX: always show on mobile (no hover) */
   @media (max-width: 768px) {
     opacity: 1;
     pointer-events: all;
@@ -427,7 +421,6 @@ const MusicMood = styled.div`
   text-overflow: ellipsis;
 `;
 
-// ─── INLINE EDIT ─────────────────────────────────────────────────────────────
 const InlineEdit = styled.div`
   width: 100%;
   animation: ${slideIn} 0.2s ease;
@@ -439,7 +432,6 @@ const InlineInput = styled(Input)`
   margin-bottom: 0.4rem;
 `;
 
-// ─── SKELETON ─────────────────────────────────────────────────────────────────
 const SkeletonCard = styled.div`
   background: linear-gradient(90deg, ${C.surface} 25%, ${C.surfaceUp} 50%, ${C.surface} 75%);
   background-size: 600px 100%;
@@ -449,7 +441,6 @@ const SkeletonCard = styled.div`
   height: 80px;
 `;
 
-// ─── EMPTY ────────────────────────────────────────────────────────────────────
 const EmptyState = styled.div`
   grid-column: 1 / -1;
   text-align: center;
@@ -467,7 +458,6 @@ const EmptyTitle = styled.div`
 `;
 const EmptyDesc = styled.div`font-size: 0.84rem;`;
 
-// ─── SPINNER ─────────────────────────────────────────────────────────────────
 const Spinner = styled.span`
   display: inline-block;
   width: 13px;
@@ -480,7 +470,6 @@ const Spinner = styled.span`
   vertical-align: middle;
 `;
 
-// ─── TOAST ────────────────────────────────────────────────────────────────────
 const ToastWrap = styled.div`
   position: fixed;
   bottom: 2rem;
@@ -506,7 +495,6 @@ const ToastItem = styled.div`
   max-width: 300px;
 `;
 
-// ─── HELPERS ─────────────────────────────────────────────────────────────────
 const isValidHex = (v) => /^#(?:[0-9a-fA-F]{3}){1,2}$/.test(v);
 const EMPTY_FORM  = { artist: '', track: '', mood: '', color: '#10b981' };
 
@@ -517,7 +505,6 @@ const BAR_PROPS = [
   { dur: '1.3', delay: '0.1'  },
 ];
 
-// ─── ERROR PARSER ─────────────────────────────────────────────────────────────
 const parseError = async (res) => {
   try {
     const d = await res.json();
@@ -531,9 +518,7 @@ const parseError = async (res) => {
   }
 };
 
-// ═════════════════════════════════════════════════════════════════════════════
-//  COMPONENT
-// ═════════════════════════════════════════════════════════════════════════════
+
 export default function MusicVibes() {
   const [vibes,      setVibes]      = useState([]);
   const [loading,    setLoading]    = useState(true);
@@ -552,16 +537,13 @@ export default function MusicVibes() {
   const [deletingId, setDeletingId] = useState(null);
   const [toasts,     setToasts]     = useState([]);
 
-  // ─── TOAST ───────────────────────────────────────────────────────────────
   const toast = useCallback((msg, err = false) => {
     const id = Date.now();
     setToasts(t => [...t, { id, msg, err }]);
     setTimeout(() => setToasts(t => t.filter(x => x.id !== id)), 3500);
   }, []);
 
-  // ─── FETCH ───────────────────────────────────────────────────────────────
-  // GET /api/music-vibes/ → MusicVibeListCreateAPIView
-  // Backend model ordering: ['-created_at'] — newest first
+
   const fetchVibes = useCallback(async () => {
     setLoading(true);
     setFetchErr(null);
@@ -579,10 +561,7 @@ export default function MusicVibes() {
 
   useEffect(() => { fetchVibes(); }, [fetchVibes]);
 
-  // ─── CREATE ──────────────────────────────────────────────────────────────
-  // POST /api/music-vibes/
-  // Serializer fields: artist (required), track (required), mood, color
-  // Backend validates: artist not blank, track not blank, color regex ^#[0-9a-fA-F]{3,6}$
+
   const handleCreate = async (e) => {
     e.preventDefault();
     if (!newForm.artist.trim() || !newForm.track.trim()) {
@@ -608,7 +587,6 @@ export default function MusicVibes() {
       });
       if (!res.ok) { setCreateErr(await parseError(res)); return; }
       const created = await res.json();
-      // Prepend — matches backend ordering ['-created_at']
       setVibes(prev => [created, ...prev]);
       setNewForm(EMPTY_FORM);
       setIsCreating(false);
@@ -621,15 +599,13 @@ export default function MusicVibes() {
     }
   };
 
-  // ─── START EDIT ──────────────────────────────────────────────────────────
   const startEdit = (v) => {
     setEditId(v.id);
     setEditForm({ artist: v.artist, track: v.track, mood: v.mood || '', color: v.color });
     setEditErr(null);
   };
 
-  // ─── UPDATE ──────────────────────────────────────────────────────────────
-  // PATCH /api/music-vibes/<pk>/ → MusicVibeRetrieveUpdateDestroyAPIView
+
   const handleUpdate = async (e, id) => {
     e.preventDefault();
     if (!editForm.artist.trim() || !editForm.track.trim()) {
@@ -666,8 +642,7 @@ export default function MusicVibes() {
     }
   };
 
-  // ─── DELETE ──────────────────────────────────────────────────────────────
-  // DELETE /api/music-vibes/<pk>/ → 204 No Content on success
+
   const handleDelete = async (id) => {
     setDeletingId(id);
     try {
@@ -683,13 +658,11 @@ export default function MusicVibes() {
     }
   };
 
-  // ─── RENDER ──────────────────────────────────────────────────────────────
   return (
     <>
       <GlobalStyle />
 
       <Page>
-        {/* HEADER */}
         <EyebrowRow>
           <Eyebrow>Music Vibes</Eyebrow>
           <EyebrowLine />
@@ -714,7 +687,6 @@ export default function MusicVibes() {
           </AddButton>
         </HeaderRow>
 
-        {/* CREATE FORM */}
         {isCreating && (
           <FormPanel>
             <FormPanelTitle>New Track Entry</FormPanelTitle>
@@ -784,7 +756,7 @@ export default function MusicVibes() {
           </FormPanel>
         )}
 
-        {/* FETCH ERROR */}
+    
         {fetchErr && (
           <FetchError>
             ⚠ Could not load tracks — {fetchErr}.{' '}
@@ -792,7 +764,6 @@ export default function MusicVibes() {
           </FetchError>
         )}
 
-        {/* GRID */}
         <MusicGrid>
           {loading
             ? Array.from({ length: 8 }).map((_, i) => <SkeletonCard key={i} />)
@@ -813,7 +784,6 @@ export default function MusicVibes() {
 
                       {editId === v.id ? (
 
-                        /* ── INLINE EDIT ── */
                         <InlineEdit>
                           <form onSubmit={e => handleUpdate(e, v.id)} style={{ width: '100%' }}>
                             <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', marginBottom: '0.1rem' }}>
@@ -878,7 +848,6 @@ export default function MusicVibes() {
 
                       ) : (
 
-                        /* ── DISPLAY ── */
                         <>
                           <CardActions>
                             <IconBtn title="Edit" onClick={() => startEdit(v)}>✏</IconBtn>
@@ -915,7 +884,6 @@ export default function MusicVibes() {
         </MusicGrid>
       </Page>
 
-      {/* TOASTS */}
       <ToastWrap>
         {toasts.map(t => (
           <ToastItem key={t.id} $err={t.err}>

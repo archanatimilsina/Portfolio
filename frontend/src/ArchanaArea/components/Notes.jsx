@@ -1,13 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
+const API_BASE = import.meta.env.VITE_API_URL;
+const ENDPOINT = `${API_BASE}/api/node-matrix/`;
 
-// ─── CONFIG ──────────────────────────────────────────────────────────────────
-// FIX: Use relative URL — matches urls.py: path('node-matrix/', ...)
-// Absolute http://localhost:8000 causes NetworkError when served from Django
-// or behind a reverse proxy. Use a Vite proxy if dev server is separate:
-//   vite.config.js → server: { proxy: { '/api': 'http://localhost:8000' } }
-const ENDPOINT = '/api/node-matrix/';
-
-// ─── STYLES ──────────────────────────────────────────────────────────────────
 const style = `
   @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap');
 
@@ -310,7 +304,6 @@ const style = `
   }
 `;
 
-// ─── HELPERS ─────────────────────────────────────────────────────────────────
 const EMPTY = { emoji: '', title: '', text: '' };
 
 const parseError = async (res) => {
@@ -334,7 +327,6 @@ const fmtDate = (iso) => {
   });
 };
 
-// ─── COMPONENT ───────────────────────────────────────────────────────────────
 export default function Notes() {
   const [notes,      setNotes]      = useState([]);
   const [loading,    setLoading]    = useState(true);
@@ -353,16 +345,13 @@ export default function Notes() {
   const [deletingId, setDeletingId] = useState(null);
   const [toasts,     setToasts]     = useState([]);
 
-  // ── toast ──────────────────────────────────────────────────────────────────
   const toast = useCallback((msg, err = false) => {
     const id = Date.now();
     setToasts(t => [...t, { id, msg, err }]);
     setTimeout(() => setToasts(t => t.filter(x => x.id !== id)), 3500);
   }, []);
 
-  // ── fetch all ──────────────────────────────────────────────────────────────
-  // FIX: hits /api/node-matrix/ (relative) — matches urls.py exactly:
-  //   path('node-matrix/', NoteListCreateAPIView.as_view(), ...)
+
   const fetchNotes = useCallback(async () => {
     setLoading(true);
     setFetchErr(null);
@@ -380,9 +369,7 @@ export default function Notes() {
 
   useEffect(() => { fetchNotes(); }, [fetchNotes]);
 
-  // ── create ─────────────────────────────────────────────────────────────────
-  // POST /api/node-matrix/
-  // Serializer fields: emoji, title, text  (id + created_at are read-only)
+
   const handleCreate = async (e) => {
     e.preventDefault();
     if (!newForm.title.trim() || !newForm.text.trim()) {
@@ -403,7 +390,6 @@ export default function Notes() {
       });
       if (!res.ok) { setCreateErr(await parseError(res)); return; }
       const created = await res.json();
-      // Prepend so newest appears first (matches backend ordering: ['-created_at'])
       setNotes(prev => [created, ...prev]);
       setNewForm(EMPTY);
       setIsCreating(false);
@@ -416,15 +402,13 @@ export default function Notes() {
     }
   };
 
-  // ── start edit ─────────────────────────────────────────────────────────────
   const startEdit = (note) => {
     setEditId(note.id);
     setEditForm({ emoji: note.emoji, title: note.title, text: note.text });
     setEditErr(null);
   };
 
-  // ── update ─────────────────────────────────────────────────────────────────
-  // PATCH /api/node-matrix/<pk>/  → NoteRetrieveUpdateDestroyAPIView
+
   const handleUpdate = async (e, id) => {
     e.preventDefault();
     if (!editForm.title.trim() || !editForm.text.trim()) {
@@ -456,13 +440,11 @@ export default function Notes() {
     }
   };
 
-  // ── delete ─────────────────────────────────────────────────────────────────
-  // DELETE /api/node-matrix/<pk>/  → 204 No Content on success
+  
   const handleDelete = async (id) => {
     setDeletingId(id);
     try {
       const res = await fetch(`${ENDPOINT}${id}/`, { method: 'DELETE' });
-      // 204 is the success status for DELETE — treat both ok and 204 as success
       if (!res.ok && res.status !== 204) { toast('Delete failed.', true); return; }
       setNotes(prev => prev.filter(n => n.id !== id));
       toast('Note deleted');
@@ -474,14 +456,12 @@ export default function Notes() {
     }
   };
 
-  // ─── RENDER ───────────────────────────────────────────────────────────────
   return (
     <>
       <style>{style}</style>
 
       <div className="page">
 
-        {/* HEADER */}
         <div className="eyebrow-row">
           <span className="eyebrow">Notes</span>
           <div className="eyebrow-line" />
@@ -507,7 +487,6 @@ export default function Notes() {
           </button>
         </div>
 
-        {/* CREATE FORM */}
         {isCreating && (
           <div className="form-panel">
             <div className="form-panel-title">New Note Entry</div>
@@ -575,7 +554,6 @@ export default function Notes() {
           </div>
         )}
 
-        {/* FETCH ERROR */}
         {fetchErr && (
           <div className="error-banner top">
             ⚠ Could not load notes — {fetchErr}.{' '}
@@ -583,7 +561,6 @@ export default function Notes() {
           </div>
         )}
 
-        {/* GRID */}
         <div className="note-grid">
           {loading
             ? Array.from({ length: 6 }).map((_, i) => (
@@ -605,7 +582,6 @@ export default function Notes() {
                   >
                     {editId === n.id ? (
 
-                      /* ── INLINE EDIT ── */
                       <div className="inline-edit">
                         <form onSubmit={e => handleUpdate(e, n.id)}>
                           <div className="inline-row">
@@ -659,7 +635,6 @@ export default function Notes() {
 
                     ) : (
 
-                      /* ── DISPLAY ── */
                       <>
                         <div className="card-actions">
                           <button
@@ -695,7 +670,6 @@ export default function Notes() {
         </div>
       </div>
 
-      {/* TOASTS */}
       <div className="toast-wrap">
         {toasts.map(t => (
           <div key={t.id} className={`toast ${t.err ? 'err' : 'ok'}`}>

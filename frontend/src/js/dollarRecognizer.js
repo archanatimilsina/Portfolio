@@ -1,17 +1,4 @@
-/**
- * $1 Unistroke Recognizer — pure JS port
- * Original: Wobbrock, Wilson & Li (2007)  https://depts.washington.edu/acelab/proj/dollar/
- *
- * Usage:
- *   const r = new DollarRecognizer();
- *   r.addGesture("circle",    [[{x,y}, ...]]);   // register template
- *   const result = r.recognize([[{x,y}, ...]]);  // recognize a gesture
- *   // result → { name: "circle", score: 0.87 }
- *
- * A gesture passed in is an ARRAY OF STROKES (multi-stroke support via
- * flattening — the $1 core works on a single point-cloud after flattening).
- * For true multi-stroke recognition upgrade to $N.
- */
+
 
 const NUM_POINTS  = 64;
 const SQUARE_SIZE = 250;
@@ -20,7 +7,7 @@ const DIAGONAL    = Math.sqrt(SQUARE_SIZE * SQUARE_SIZE + SQUARE_SIZE * SQUARE_S
 const HALF_DIAG   = 0.5 * DIAGONAL;
 const ANGLE_RANGE = degreesToRadians(45);
 const ANGLE_PREC  = degreesToRadians(2);
-const PHI         = 0.5 * (-1 + Math.sqrt(5)); // golden ratio
+const PHI         = 0.5 * (-1 + Math.sqrt(5)); 
 
 
 function degreesToRadians(d) { return (d * Math.PI) / 180; }
@@ -163,9 +150,8 @@ export class DollarRecognizer {
   }
 
   /**
-   * Register a named gesture template.
-   * @param {string}   name    - gesture name (must match keys in gesture-nav.yaml)
-   * @param {Array}    strokes - array of strokes, each stroke is array of {x,y}
+   * @param {string}   name   
+   * @param {Array}    strokes 
    */
   addTemplate(name, strokes) {
     this.templates.push(new Template(name, strokes));

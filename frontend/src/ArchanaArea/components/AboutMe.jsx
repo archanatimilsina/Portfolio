@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import styled, { createGlobalStyle, keyframes, css } from 'styled-components';
-
+const API_BASE = import.meta.env.VITE_API_URL;
 
 const GlobalStyle = createGlobalStyle`
   @import url('https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Clash+Display:wght@400;500;600;700&display=swap');
@@ -71,7 +71,7 @@ const glitch = keyframes`
 `;
 
 
-const BASE_URL = '/api';  
+const BASE_URL = `${API_BASE}/api`;  
 
 
 const AboutMe = () => {

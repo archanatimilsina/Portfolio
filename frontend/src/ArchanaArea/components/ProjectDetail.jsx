@@ -1,9 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import styled, { createGlobalStyle, keyframes } from 'styled-components';
 
-/* ─────────────────────────────────────────────
-   GLOBAL STYLE
-───────────────────────────────────────────── */
+const API_BASE = import.meta.env.VITE_API_URL;
 const GlobalStyle = createGlobalStyle`
   @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap');
 
@@ -38,14 +36,10 @@ const GlobalStyle = createGlobalStyle`
   ::-webkit-scrollbar-thumb:hover { background:var(--border-hover); }
 `;
 
-/* ─────────────────────────────────────────────
-   API
-───────────────────────────────────────────── */
-const BASE = '/api';
 
-/* ─────────────────────────────────────────────
-   PROJECT TYPE OPTIONS  (must match model choices)
-───────────────────────────────────────────── */
+const BASE = `${API_BASE}/api`;
+
+
 const TYPE_OPTS = [
   { value:'solo',        label:'Solo'        },
   { value:'group',       label:'Group'       },
@@ -53,9 +47,7 @@ const TYPE_OPTS = [
   { value:'open_source', label:'Open Source' },
 ];
 
-/* ─────────────────────────────────────────────
-   BLANK FORM STATE
-───────────────────────────────────────────── */
+
 const BLANK = {
   name: '',
   tech: '',
@@ -66,9 +58,7 @@ const BLANK = {
   github_link: '',
 };
 
-/* ─────────────────────────────────────────────
-   MAIN COMPONENT
-───────────────────────────────────────────── */
+
 export default function ProjectsPage({ onBack }) {
   const [projects,   setProjects]   = useState([]);
   const [loading,    setLoading]    = useState(true);
@@ -77,19 +67,14 @@ export default function ProjectsPage({ onBack }) {
   const [submitting, setSubmitting] = useState(false);
   const [deletingId, setDeletingId] = useState(null);
 
-  // modal state: null | 'add' | 'edit'
   const [modal,       setModal]       = useState(null);
-  const [editTarget,  setEditTarget]  = useState(null);   // project being edited
+  const [editTarget,  setEditTarget]  = useState(null);  
   const [form,        setForm]        = useState(BLANK);
   const [formError,   setFormError]   = useState('');
 
-  // feature tag input
   const [featureInput, setFeatureInput] = useState('');
 
-  // filter
   const [filterType, setFilterType] = useState('all');
-
-  /* ── FETCH ── */
   useEffect(() => { fetchProjects(); }, []);
 
   const fetchProjects = async () => {
@@ -108,7 +93,6 @@ export default function ProjectsPage({ onBack }) {
     }
   };
 
-  /* ── OPEN ADD MODAL ── */
   const openAdd = () => {
     setForm(BLANK);
     setFeatureInput('');
@@ -117,7 +101,6 @@ export default function ProjectsPage({ onBack }) {
     setModal('add');
   };
 
-  /* ── OPEN EDIT MODAL ── */
   const openEdit = (project) => {
     setForm({
       name:         project.name         || '',
@@ -136,10 +119,8 @@ export default function ProjectsPage({ onBack }) {
 
   const closeModal = () => { setModal(null); setEditTarget(null); setFormError(''); };
 
-  /* ── FORM FIELD CHANGE ── */
   const handleField = (key, value) => setForm(prev => ({ ...prev, [key]: value }));
 
-  /* ── ADD FEATURE TAG ── */
   const addFeature = () => {
     const trimmed = featureInput.trim();
     if (!trimmed) return;
@@ -150,14 +131,12 @@ export default function ProjectsPage({ onBack }) {
     setForm(prev => ({ ...prev, features: prev.features.filter((_, i) => i !== idx) }));
   };
 
-  /* ── VALIDATE ── */
   const validate = () => {
     if (!form.name.trim())  { setFormError('Project name is required.'); return false; }
     if (!form.tech.trim())  { setFormError('Tech field is required.');   return false; }
     return true;
   };
 
-  /* ── CREATE ── */
   const handleCreate = async (e) => {
     e.preventDefault();
     if (!validate()) return;
@@ -183,7 +162,7 @@ export default function ProjectsPage({ onBack }) {
     }
   };
 
-  /* ── UPDATE ── */
+
   const handleUpdate = async (e) => {
     e.preventDefault();
     if (!validate()) return;
@@ -209,7 +188,7 @@ export default function ProjectsPage({ onBack }) {
     }
   };
 
-  /* ── DELETE ── */
+
   const handleDelete = async (id) => {
     setDeletingId(id);
     setApiError('');
@@ -224,20 +203,15 @@ export default function ProjectsPage({ onBack }) {
     }
   };
 
-  /* ── FILTERED LIST ── */
   const visible = filterType === 'all'
     ? projects
     : projects.filter(p => p.project_type === filterType);
 
-  /* ─────────────────────────────────────────────
-     RENDER
-  ───────────────────────────────────────────── */
   return (
     <>
       <GlobalStyle />
       <PageWrap>
 
-        {/* ── TOP BAR ── */}
         <TopBar>
           <TopLeft>
             <BackBtn onClick={onBack}>←</BackBtn>
@@ -255,7 +229,6 @@ export default function ProjectsPage({ onBack }) {
           </TopRight>
         </TopBar>
 
-        {/* ── FILTER TABS ── */}
         <FilterRow>
           <FilterTab $active={filterType === 'all'} onClick={() => setFilterType('all')}>All</FilterTab>
           {TYPE_OPTS.map(o => (
@@ -265,7 +238,6 @@ export default function ProjectsPage({ onBack }) {
           ))}
         </FilterRow>
 
-        {/* ── LOADING ── */}
         {loading && (
           <CenterState>
             <Spinner />
@@ -273,7 +245,6 @@ export default function ProjectsPage({ onBack }) {
           </CenterState>
         )}
 
-        {/* ── EMPTY ── */}
         {!loading && visible.length === 0 && (
           <CenterState>
             <EmptyIcon>👩‍💻</EmptyIcon>
@@ -282,7 +253,6 @@ export default function ProjectsPage({ onBack }) {
           </CenterState>
         )}
 
-        {/* ── GRID ── */}
         {!loading && visible.length > 0 && (
           <Grid>
             {visible.map((project, i) => (
@@ -298,7 +268,6 @@ export default function ProjectsPage({ onBack }) {
           </Grid>
         )}
 
-        {/* ── MODAL ── */}
         {modal && (
           <ModalOverlay onClick={closeModal}>
             <ModalBox onClick={e => e.stopPropagation()}>
@@ -460,24 +429,20 @@ function ProjectCard({ project, index, isDeleting, onEdit, onDelete }) {
   );
 }
 
-/* ─────────────────────────────────────────────
-   ANIMATIONS
-───────────────────────────────────────────── */
+
 const fadeUp  = keyframes`from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:translateY(0);}`;
 const spin    = keyframes`to{transform:rotate(360deg);}`;
 const pulse   = keyframes`0%,100%{opacity:1;}50%{opacity:.4;}`;
 const modalIn = keyframes`from{opacity:0;transform:scale(.95) translateY(10px);}to{opacity:1;transform:scale(1) translateY(0);}`;
 
-/* ─────────────────────────────────────────────
-   STYLED COMPONENTS
-───────────────────────────────────────────── */
+
 const PageWrap = styled.div`
   min-height:100vh;
   background:var(--bg);
   padding:0 2rem 6rem;
 `;
 
-/* TOP BAR */
+
 const TopBar   = styled.div`
   display:flex;justify-content:space-between;align-items:center;
   padding:2rem 0 1.5rem;
@@ -519,7 +484,6 @@ const DismissBtn = styled.button`
   &:hover{opacity:.7;}
 `;
 
-/* FILTER */
 const FilterRow = styled.div`
   display:flex;gap:.5rem;padding:1.25rem 0;flex-wrap:wrap;
 `;
@@ -532,7 +496,7 @@ const FilterTab = styled.button`
   &:hover{border-color:var(--border-hover);color:var(--text-primary);}
 `;
 
-/* CENTER STATES */
+
 const CenterState  = styled.div`
   display:flex;flex-direction:column;align-items:center;justify-content:center;
   min-height:55vh;gap:1rem;color:var(--text-secondary);
@@ -547,7 +511,7 @@ const EmptyIcon    = styled.div`font-size:2.5rem;`;
 const EmptyTitle   = styled.h3`font-family:'Syne',sans-serif;font-size:1.2rem;font-weight:700;color:var(--text-primary);`;
 const EmptyDesc    = styled.p`font-size:.875rem;`;
 
-/* GRID */
+
 const Grid = styled.div`
   display:grid;
   grid-template-columns:repeat(auto-fill, minmax(320px, 1fr));
@@ -555,7 +519,7 @@ const Grid = styled.div`
   padding-top:.5rem;
 `;
 
-/* CARD */
+
 const Card = styled.div`
   background:var(--bg-card);
   border:1px solid var(--border);
@@ -624,7 +588,7 @@ const GithubLink = styled.a`
 `;
 const CardDate = styled.span`font-size:.72rem;color:var(--text-secondary);opacity:.6;`;
 
-/* MODAL */
+
 const ModalOverlay = styled.div`
   position:fixed;inset:0;background:rgba(0,0,0,.7);
   backdrop-filter:blur(6px);z-index:500;

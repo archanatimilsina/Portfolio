@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import styled, { createGlobalStyle, keyframes } from 'styled-components';
-
+const API_BASE = import.meta.env.VITE_API_URL;
 
 const C = {
   bg:      '#f6f5f0',
@@ -18,7 +18,7 @@ const C = {
 };
 
 
-const BASE_URL = '/api';
+const BASE_URL = `${API_BASE}/api`;
 
 const EMPTY_FORM = {
   type: 'drama', title: '', genre: '', rating: '', status: 'Plan to Watch',

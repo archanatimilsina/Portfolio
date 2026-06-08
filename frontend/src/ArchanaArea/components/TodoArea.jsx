@@ -1,9 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import styled, { createGlobalStyle, keyframes } from 'styled-components';
-
-/* ─────────────────────────────────────────────
-   GLOBAL STYLE
-───────────────────────────────────────────── */
+const API_BASE = import.meta.env.VITE_API_URL;
 const GlobalStyle = createGlobalStyle`
   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 
@@ -29,14 +26,10 @@ const GlobalStyle = createGlobalStyle`
   ::-webkit-scrollbar-thumb:hover{background:var(--text-secondary);}
 `;
 
-/* ─────────────────────────────────────────────
-   API
-───────────────────────────────────────────── */
-const BASE_URL = '/api';
 
-/* ─────────────────────────────────────────────
-   HELPERS
-───────────────────────────────────────────── */
+const BASE_URL = `${API_BASE}/api`;
+
+
 const today = () => new Date().toISOString().split('T')[0];
 
 const formatDisplayDate = (dateStr) => {
@@ -44,20 +37,17 @@ const formatDisplayDate = (dateStr) => {
   return new Date(dateStr + 'T00:00:00Z').toLocaleDateString(undefined, opts);
 };
 
-/* ─────────────────────────────────────────────
-   MAIN COMPONENT
-───────────────────────────────────────────── */
+
 export default function ChronosTaskFlow() {
   const [allTasks,   setAllTasks]   = useState([]);
   const [loading,    setLoading]    = useState(true);
   const [apiError,   setApiError]   = useState('');
-  const [savingId,   setSavingId]   = useState(null);  // id being mutated
-  const [submitting, setSubmitting] = useState(false); // new task POST in flight
+  const [savingId,   setSavingId]   = useState(null); 
+  const [submitting, setSubmitting] = useState(false);
 
   const [taskInput, setTaskInput] = useState('');
   const [dateInput, setDateInput] = useState(today());
 
-  /* ── FETCH ALL ── */
   useEffect(() => { fetchTasks(); }, []);
 
   const fetchTasks = async () => {
@@ -76,7 +66,6 @@ export default function ChronosTaskFlow() {
     }
   };
 
-  /* ── CREATE ── */
   const handleAddTask = async (e) => {
     e.preventDefault();
     if (!taskInput.trim() || !dateInput) return;
@@ -103,7 +92,6 @@ export default function ChronosTaskFlow() {
     }
   };
 
-  /* ── TOGGLE COMPLETE (PATCH) ── */
   const toggleTask = async (task) => {
     setSavingId(task.id);
     setApiError('');
@@ -123,7 +111,6 @@ export default function ChronosTaskFlow() {
     }
   };
 
-  /* ── EDIT TEXT (PUT) ── */
   const editTask = async (task, newText) => {
     if (!newText.trim()) return;
     setSavingId(task.id);
@@ -147,7 +134,6 @@ export default function ChronosTaskFlow() {
     }
   };
 
-  /* ── DELETE SINGLE TASK ── */
   const deleteTask = async (taskId) => {
     setSavingId(taskId);
     setApiError('');
@@ -162,10 +148,8 @@ export default function ChronosTaskFlow() {
     }
   };
 
-  /* ── DELETE ENTIRE DAY — fires individual deletes in parallel ── */
   const deleteDay = async (dateStr) => {
     const dayTasks = allTasks.filter(t => t.dueDate === dateStr);
-    // Optimistic removal
     setAllTasks(prev => prev.filter(t => t.dueDate !== dateStr));
     try {
       await Promise.all(
@@ -180,7 +164,6 @@ export default function ChronosTaskFlow() {
     }
   };
 
-  /* ── GROUP + FILTER ── */
   const getVisibleDayGroups = () => {
     const grouped = allTasks.reduce((groups, task) => {
       const d = task.dueDate;
@@ -204,15 +187,13 @@ export default function ChronosTaskFlow() {
   const visibleDayGroups = getVisibleDayGroups();
   const pendingCount     = allTasks.filter(t => !t.completed).length;
 
-  /* ─────────────────────────────────────────────
-     RENDER
-  ───────────────────────────────────────────── */
+ 
   return (
     <>
       <GlobalStyle />
       <AppWrapper>
 
-        {/* HEADER */}
+       
         <Header>
           <Brand>Chronos <em>TaskFlow</em></Brand>
           <HeaderRight>
@@ -228,7 +209,7 @@ export default function ChronosTaskFlow() {
           </HeaderRight>
         </Header>
 
-        {/* LOADING */}
+        
         {loading && (
           <CenteredState>
             <LoadSpinner />
@@ -236,7 +217,7 @@ export default function ChronosTaskFlow() {
           </CenteredState>
         )}
 
-        {/* EMPTY */}
+     
         {!loading && visibleDayGroups.length === 0 && (
           <EmptyState>
             <h3>All pipelines clear.</h3>
@@ -244,7 +225,7 @@ export default function ChronosTaskFlow() {
           </EmptyState>
         )}
 
-        {/* KANBAN TIMELINE */}
+       
         {!loading && visibleDayGroups.length > 0 && (
           <TimelineGrid>
             {visibleDayGroups.map(dayGroup => (
@@ -262,7 +243,7 @@ export default function ChronosTaskFlow() {
           </TimelineGrid>
         )}
 
-        {/* FLOATING CONTROL BAR */}
+       
         <ControlBar onSubmit={handleAddTask}>
           <InputGroup>
             <TaskInput
@@ -289,9 +270,7 @@ export default function ChronosTaskFlow() {
   );
 }
 
-/* ─────────────────────────────────────────────
-   DAY COLUMN
-───────────────────────────────────────────── */
+
 function DayColumn({ dayGroup, savingId, onToggle, onEdit, onDelete, onDeleteDay }) {
   const total     = dayGroup.tasks.length;
   const completed = dayGroup.tasks.filter(t => t.completed).length;
@@ -329,9 +308,7 @@ function DayColumn({ dayGroup, savingId, onToggle, onEdit, onDelete, onDeleteDay
   );
 }
 
-/* ─────────────────────────────────────────────
-   TASK CARD
-───────────────────────────────────────────── */
+
 function TaskCard({ task, isSaving, onToggle, onEdit, onDelete }) {
   const [isEditing, setIsEditing] = useState(false);
   const [editText,  setEditText]  = useState(task.text);
@@ -392,16 +369,12 @@ function TaskCard({ task, isSaving, onToggle, onEdit, onDelete }) {
   );
 }
 
-/* ─────────────────────────────────────────────
-   ANIMATIONS
-───────────────────────────────────────────── */
+
 const fadeInColumn = keyframes`from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:translateY(0);}`;
 const spin         = keyframes`to{transform:rotate(360deg);}`;
 const pulse        = keyframes`0%,100%{opacity:1;}50%{opacity:.4;}`;
 
-/* ─────────────────────────────────────────────
-   STYLED COMPONENTS
-───────────────────────────────────────────── */
+
 const AppWrapper = styled.div`height:100vh;display:flex;flex-direction:column;padding:0 2rem;`;
 
 const Header = styled.header`

@@ -1,9 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import styled, { keyframes } from 'styled-components';
+const API_BASE = import.meta.env.VITE_API_URL;
 
-// ==========================================
-// DESIGN TOKENS
-// ==========================================
 const C = {
   white: '#ffffff',
   border: '#e5e7eb',
@@ -16,14 +14,10 @@ const C = {
   dangerLt: '#fef2f2',
 };
 
-// ==========================================
-// API CONSTANTS
-// ==========================================
-const BASE_URL = '/api';
 
-// ==========================================
-// ANIMATIONS
-// ==========================================
+const BASE_URL = `${API_BASE}/api`;
+
+
 const contentFade = keyframes`
   from { opacity: 0; transform: translateY(8px); }
   to   { opacity: 1; transform: translateY(0); }
@@ -33,16 +27,14 @@ const spin = keyframes`
   to { transform: rotate(360deg); }
 `;
 
-// ==========================================
-// MAIN COMPONENT
-// ==========================================
+
 export default function Goals() {
   const [goals, setGoals]         = useState([]);
   const [loading, setLoading]     = useState(true);
   const [error, setError]         = useState('');
   const [isCreating, setIsCreating] = useState(false);
   const [editingId, setEditingId] = useState(null);
-  const [savingId, setSavingId]   = useState(null); // tracks which item is being saved/deleted
+  const [savingId, setSavingId]   = useState(null);
 
   const [newGoal, setNewGoal]   = useState({ emoji: '', title: '', timeline: '' });
   const [editGoal, setEditGoal] = useState({ emoji: '', title: '', timeline: '' });
