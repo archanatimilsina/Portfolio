@@ -40,7 +40,7 @@ DEBUG = True
 ALLOWED_HOSTS = [
     'https://portfolio-79vi.onrender.com',
     'archana-timilsina.com.np',
-    'www.archana-timilsina.com.np',,
+    'www.archana-timilsina.com.np',
     'portfolio-79vi.onrender.com'
 ]
 
