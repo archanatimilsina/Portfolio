@@ -44,7 +44,12 @@ ALLOWED_HOSTS = [
     'portfolio-79vi.onrender.com'
 ]
 
-
+CORS_ALLOWED_ORIGINS = [
+    "https://portfolio-mtv31atuo-archanatimilsinas-projects.vercel.app/",        
+    "https://archana-timilsina.com.np",   
+    "http://localhost:5173",
+    "http://localhost:3000",
+]
 # Application definition
 
 INSTALLED_APPS = [
@@ -55,6 +60,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
+     'corsheaders'
 ]
 EXTERNAL_APPS =[
     'api'
@@ -62,6 +68,7 @@ EXTERNAL_APPS =[
 INSTALLED_APPS += EXTERNAL_APPS
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
