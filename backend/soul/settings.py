@@ -37,7 +37,11 @@ SECRET_KEY = 'django-insecure-%iqt3zz$7vqaa&ih!*gjqw5#pg!!ezkd!fve(y*hvuo^(u*4ju
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [
+    'https://portfolio-79vi.onrender.com',
+    'archana-timilsina.com.np',
+    'www.archana-timilsina.com.np',
+]
 
 
 # Application definition
