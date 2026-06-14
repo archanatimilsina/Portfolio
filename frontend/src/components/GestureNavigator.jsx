@@ -1,11 +1,8 @@
-
-
 import { useEffect, useRef, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { DollarRecognizer } from "../js/dollarRecognizer";
 import { useGestureCanvas } from "../js/useGestureCanvas";
 import yaml from "js-yaml";
-const API_BASE = import.meta.env.VITE_API_URL;
 const BUILT_IN_TEMPLATES = {
   circle: [
     [
@@ -118,11 +115,11 @@ export default function GestureNavigator() {
         navConfigRef.current = {
           score_threshold: 0.70,
           gestures: [
-            { gesture: "circle",   route: "/",          label: "Home"       },
+            { gesture: "circle",   route: "/skills",          label: "Skills"       },
             { gesture: "triangle", route: "/projects",  label: "Projects"   },
             { gesture: "check",    route: "/experience",label: "Experience" },
             { gesture: "caret",    route: "/contact",   label: "Contact"    },
-            { gesture: "arrow",    route: "/skills",    label: "Skills"     },
+            { gesture: "arrow",    route: "/",    label: "Home"     },
             { gesture: "pigtail",  route: "/about",     label: "About"      },
           ],
         };

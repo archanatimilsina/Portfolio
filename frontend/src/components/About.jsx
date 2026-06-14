@@ -1,6 +1,8 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-const BackButtonPage = () => {
+import styled from 'styled-components';
+
+const AboutPage = () => {
   const navigate = useNavigate();
 
   const handleGoBack = () => {
@@ -8,39 +10,52 @@ const BackButtonPage = () => {
   };
 
   return (
-    <>
-    <div style={styles.container}>
-        <div>Just checking!!!You are in About Page</div>
-        <br />
-        <hr />
-      <button onClick={handleGoBack} style={styles.button}>
+    <AboutContainer>
+      <div className='TextContainer'>About Me</div>
+      <GoBackBtn onClick={handleGoBack}>
         Go Back
-      </button>
-    </div>
-            
-    </>
-    
+      </GoBackBtn>
+    </AboutContainer>
   );
 };
 
-const styles = {
-  container: {
-    fontFamily: 'sans-serif',
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
-    height: '100vh',
-    backgroundColor: '#f4f4f9',
-  },
-  button: {
-    padding: '15px 30px',
-    fontSize: '18px',
-    cursor: 'pointer',
-    backgroundColor: '#007bff',
-    color: 'white',
-    border: 'none',
-    borderRadius: '8px',
-  }
-};
+const AboutContainer = styled.section`
+  background-color: #fdf6e3; 
+  color: #586e75;
+  margin: 200px auto;
+  width: 500px;
+  height: 300px;
+  border-radius: 50px 0px 50px 0px;
+  border: 10px solid white;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 
-export default BackButtonPage;
+  .TextContainer {
+    margin-top: 80px;
+    font-size: 1.5rem;
+    font-family: 'Baloo', sans-serif;
+    font-weight: 600;
+  }
+`;
+
+const GoBackBtn = styled.button`
+  background-color: #b58900; /* Warm gold/amber tone */
+  color: white;
+  border: none;
+  border-radius: 8px;
+  outline: none;
+  width: 100px;
+  height: 35px;
+  margin-top: 20px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+
+  &:hover {
+    background-color: #856404;
+    color: #ffffff;
+    transform: translateY(-5px);
+  }
+`;
+
+export default AboutPage;

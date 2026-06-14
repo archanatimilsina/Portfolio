@@ -1,5 +1,3 @@
-
-
 const NUM_POINTS  = 64;
 const SQUARE_SIZE = 250;
 const ORIGIN      = { x: 0, y: 0 };
@@ -65,7 +63,7 @@ function scaleTo(pts, size) {
   const box  = boundingBox(pts);
   return pts.map((p) => ({
     x: p.x * (size / box.width),
-    y: p.y * (size / box.height),
+    y: p.y * (size / box.height)
   }));
 }
 
@@ -153,6 +151,7 @@ export class DollarRecognizer {
    * @param {string}   name   
    * @param {Array}    strokes 
    */
+  
   addTemplate(name, strokes) {
     this.templates.push(new Template(name, strokes));
   }

@@ -1,23 +1,10 @@
-# gesture-nav.yaml
-# ─────────────────────────────────────────────────────────────────
-# Map gesture names (must match DollarRecognizer template names)
-# to portfolio routes.
-#
-# score_threshold : minimum $1 score (0–1) to accept the match.
-#                   0.7 is a good default; raise it for stricter matching.
-#
-# Each gesture entry:
-#   gesture  : name registered via recognizer.addTemplate(name, ...)
-#   route    : React Router path to navigate to
-#   label    : human-readable description (used in the hint overlay)
-# ─────────────────────────────────────────────────────────────────
 
 score_threshold: 0.70
 
 gestures:
   - gesture: circle
-    route: /
-    label: Home
+    route: /skills
+    label: Skills
 
   - gesture: triangle
     route: /projects
@@ -36,5 +23,5 @@ gestures:
     label: About
 
   - gesture: arrow
-    route: /skills
-    label: Skills
+    route: /
+    label: Home
