@@ -34,7 +34,7 @@ const PD_EMOJI = {
 
 const verifySecret = async (field, value) => {
   try {
-    const res = await fetch('/verify-secret/', {
+    const res = await fetch(`${BASE}/verify-secret/`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ field, value }),
