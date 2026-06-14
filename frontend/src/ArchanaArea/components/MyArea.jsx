@@ -30,7 +30,7 @@ const API_BASE = import.meta.env.VITE_API_URL;
 const BASE = `${API_BASE}/api`;
 const verifySecret = async (field, value) => {
   try {
-    const res = await fetch('/api/verify-secret/', {
+    const res = await fetch(`${BASE}/verify-secret/`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ field, value }),
