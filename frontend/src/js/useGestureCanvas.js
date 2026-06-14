@@ -72,7 +72,6 @@ export function useGestureCanvas({ onGesture }) {
 
   const onPointerUp = useCallback((e) => {
     if (!activeRef.current || !currentStrokeRef.current) return;
-
     const stroke = currentStrokeRef.current;
     currentStrokeRef.current = null;
 
