@@ -47,6 +47,385 @@ const verifySecret = async (field, value) => {
 };
 
 
+function GestureNavModal({ onClose, onConfirm, currentStatus }) {
+  const modalRef = useRef(null);
+  useEffect(() => {
+    const handleKey = (e) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+  }, [onClose]);
+
+  const handleOverlayClick = (e) => {
+    if (modalRef.current && !modalRef.current.contains(e.target)) onClose();
+  };
+
+  const isActive = currentStatus === 'active';
+
+  return (
+    <ModalOverlay onClick={handleOverlayClick}>
+      <ModalBox ref={modalRef}>
+        <ModalCloseBtn onClick={onClose}>✕</ModalCloseBtn>
+        <ModalIconWrap>👆</ModalIconWrap>
+        <ModalTitle>Gesture Navigation</ModalTitle>
+        <ModalDesc>
+          Draw gestures on screen to navigate — no clicks, no scrolling. Triple-tap anywhere to activate the drawing canvas.
+        </ModalDesc>
+
+        <ModalHowTo>
+          <strong>How to use:</strong> triple-tap (touch / trackpad / mouse) anywhere on the page. A canvas appears — draw your gesture. Pause for a moment and it navigates automatically. Press <strong>Esc</strong> to cancel.
+        </ModalHowTo>
+
+        <ModalCurrentStatus $active={isActive}>
+          <span className="status-dot" />
+          Currently: {isActive ? 'Active' : 'Inactive'}
+        </ModalCurrentStatus>
+
+        <ModalBtnRow>
+          <ModalBtnYes onClick={() => onConfirm('active')}>
+            {isActive ? '✓ Keep Active' : '✓ Activate'}
+          </ModalBtnYes>
+          <ModalBtnNo onClick={() => onConfirm('inactive')}>
+            ✕ {isActive ? 'Deactivate' : 'Keep Off'}
+          </ModalBtnNo>
+        </ModalBtnRow>
+      </ModalBox>
+    </ModalOverlay>
+  );
+}
+
+
+function SecretGate({ onBack, onUnlock }) {
+  const [step,  setStep]  = useState('gate');
+  const [dream, setDream] = useState('');
+  const [wrong, setWrong] = useState(false);
+  const inputRef          = useRef(null);
+
+  useEffect(() => {
+    if (step === 'dream' && inputRef.current) inputRef.current.focus();
+  }, [step]);
+
+  const handleCheck = async () => {
+  const allowed = await verifySecret('dream', dream.trim());
+  if (allowed) {
+    onUnlock();
+  } else {
+    setWrong(true);
+    setTimeout(() => setWrong(false), 500);
+    setDream('');
+  }
+};
+
+
+  return (
+    <SecretGatePage>
+      <GateBackBtn onClick={onBack}>← Back</GateBackBtn>
+      <GateGlyph>⛩️</GateGlyph>
+      <GateTitle>Ohhh!! You accidentally<br />unlocked the <span>secret area</span></GateTitle>
+      <GateSubtitle>Restricted zone · authorised access only</GateSubtitle>
+      <GateCard>
+        <GateLockBadge><span />Private Access</GateLockBadge>
+        <GateCardTitle>But unfortunately, only Archana can go inside through it.</GateCardTitle>
+        <GateCardDesc>
+          This space holds something private. Access is reserved for the one who knows the dream word.
+        </GateCardDesc>
+        {step === 'gate' && (
+          <GateAreYouRow>
+            <GateAreYouLabel>Are you Archana?</GateAreYouLabel>
+            <GateYesBtn onClick={() => setStep('dream')}>Yes</GateYesBtn>
+            <GateNoBtn  onClick={onBack}>No, go back</GateNoBtn>
+          </GateAreYouRow>
+        )}
+        {step === 'dream' && (
+          <>
+            <GateCardTitle style={{ marginBottom: '0.75rem' }}>Then type your dream →</GateCardTitle>
+            <DreamInputWrap>
+              <DreamInput
+                ref={inputRef}
+                value={dream}
+                onChange={e => setDream(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && handleCheck()}
+                className={wrong ? 'wrong' : ''}
+                placeholder="enter the dream word..."
+                spellCheck={false}
+                autoComplete="off"
+              />
+              <DreamArrowBtn onClick={handleCheck} aria-label="Submit">→</DreamArrowBtn>
+            </DreamInputWrap>
+            <DreamHint>Case sensitive · press enter or →</DreamHint>
+          </>
+        )}
+      </GateCard>
+    </SecretGatePage>
+  );
+}
+
+
+function useApiList(endpoint) {
+  const [data,    setData]    = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error,   setError]   = useState(null);
+
+  const load = async () => {
+    setLoading(true); setError(null);
+    try {
+      const res = await fetch(`${BASE}${endpoint}`);
+      if (!res.ok) throw new Error(`Server error ${res.status}`);
+      const json = await res.json();
+      setData(Array.isArray(json) ? json : json.results || []);
+    } catch (err) {
+      setError(err.message || 'Failed to load data.');
+    } finally {
+      setLoading(false);
+    }
+  };
+  useEffect(() => { load(); }, [endpoint]); // eslint-disable-line
+  return { data, loading, error, retry: load };
+}
+
+function normaliseProject(p) {
+  return {
+    ...p,
+    note:   p.description || '',
+    tech:   p.tech        || PROJECT_TYPE_LABEL[p.project_type] || 'Project',
+    github: p.github_link || null,
+    techStack: typeof p.tech_stack === 'object' && !Array.isArray(p.tech_stack) ? p.tech_stack : {},
+    architecturalHighlights: Array.isArray(p.features) ? p.features : [],
+    entityType: 'project',
+  };
+}
+function normalisePD(pd) {
+  return {
+    ...pd,
+    emoji:            PD_EMOJI[pd.name] || '🎓',
+    type:             (pd.name || '').toLowerCase(),
+    link:             pd.certificate_link || '#',
+    certificateImage: pd.certificate_image_url || null,
+    learnings:        Array.isArray(pd.learnings)       ? pd.learnings       : [],
+    skillsAcquired:   Array.isArray(pd.skills_acquired) ? pd.skills_acquired : [],
+    entityType: 'credential',
+  };
+}
+
+function ProjectsSection({ onCardClick }) {
+  const { data: projects, loading, error, retry } = useApiList('/projectListView/');
+  return (
+    <Section>
+      <SectionLabel>Engineering Projects</SectionLabel>
+      {loading && <LoadingRow><Spinner /><LoadText>Loading projects…</LoadText></LoadingRow>}
+      {!loading && error && <ErrorBanner>⚠ {error}<RetryBtn onClick={retry}>Retry</RetryBtn></ErrorBanner>}
+      {!loading && !error && projects.length === 0 && <EmptyState>No projects added yet</EmptyState>}
+      {!loading && !error && projects.length > 0 && (
+        <CardGrid>
+          {projects.map(proj => {
+            const norm = normaliseProject(proj);
+            return (
+              <Card key={proj.id} $clickable onClick={() => onCardClick(norm)}>
+                <CardTop>
+                  <CardMeta>
+                    <Tag>{PROJECT_TYPE_LABEL[proj.project_type] || proj.project_type || 'Project'}</Tag>
+                  </CardMeta>
+                  <CardTitle>{proj.name}</CardTitle>
+                  <CardSub>{proj.description || proj.tech}</CardSub>
+                </CardTop>
+                <CardFooter>
+                  <span>Inspect Architecture</span>
+                  <span className="arrow">→</span>
+                </CardFooter>
+              </Card>
+            );
+          })}
+        </CardGrid>
+      )}
+    </Section>
+  );
+}
+
+function CredentialsSection({ onCardClick }) {
+  const { data: pdItems, loading, error, retry } = useApiList('/pdListView/');
+  return (
+    <Section>
+      <SectionLabel>Professional Credentials</SectionLabel>
+      {loading && <LoadingRow><Spinner /><LoadText>Loading credentials…</LoadText></LoadingRow>}
+      {!loading && error && <ErrorBanner>⚠ {error}<RetryBtn onClick={retry}>Retry</RetryBtn></ErrorBanner>}
+      {!loading && !error && pdItems.length === 0 && <EmptyState>No credentials added yet</EmptyState>}
+      {!loading && !error && pdItems.length > 0 && (
+        <CardGrid>
+          {pdItems.map(pd => {
+            const norm = normalisePD(pd);
+            return (
+              <Card key={pd.id} $clickable onClick={() => onCardClick(norm)}>
+                <CardTop>
+                  <CardMeta>
+                    <DurationTag>{pd.duration}</DurationTag>
+                  </CardMeta>
+                  <CredentialType>{pd.name}</CredentialType>
+                  <CardTitle style={{ fontSize: '1.1rem' }}>{pd.subject}</CardTitle>
+                  <CardSub style={{ marginTop: '0.25rem' }}>{pd.company}</CardSub>
+                </CardTop>
+                <CardFooter>
+                  <span>View Certificate</span>
+                  <span className="arrow">→</span>
+                </CardFooter>
+              </Card>
+            );
+          })}
+        </CardGrid>
+      )}
+    </Section>
+  );
+}
+
+
+export default function PortfolioLanding() {
+  const [activeItem,       setActiveItem]       = useState(null);
+  const [showGestureModal, setShowGestureModal] = useState(false);
+  const [showSecretGate,   setShowSecretGate]   = useState(false);
+  const [showSecretWorld,  setShowSecretWorld]  = useState(false);
+
+  const [gestureNavStatus, setGestureNavStatus] = useState(
+    () => localStorage.getItem('gestureNav') || 'inactive'
+  );
+  const gestureEnabled = gestureNavStatus === 'active';
+
+useEffect(() => {
+  const bufRef = { current: '' };
+  const handler = async (e) => {
+    if (!/^[0-9]$/.test(e.key)) return;
+    if (['INPUT', 'TEXTAREA'].includes(document.activeElement?.tagName)) return;
+    bufRef.current = (bufRef.current + e.key).slice(-4);
+    if (bufRef.current.length === 4) {
+      const allowed = await verifySecret('gate', bufRef.current);
+      if (allowed) { bufRef.current = ''; setShowSecretGate(true); }
+    }
+  };
+  window.addEventListener('keydown', handler);
+  return () => window.removeEventListener('keydown', handler);
+}, []);
+
+  const handleCardClick = (item) => {
+    setActiveItem(item);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+  const clearActive = () => setActiveItem(null);
+
+  const handleGestureConfirm = (choice) => {
+    localStorage.setItem('gestureNav', choice);
+    setGestureNavStatus(choice);
+    setShowGestureModal(false);
+  };
+
+  const handleGestureNavBtnClick = () => {
+    setShowGestureModal(true);
+  };
+
+  if (showSecretWorld) {
+    return (
+      <>
+        <GlobalStyle />
+        <SecretWorld onBack={() => { setShowSecretWorld(false); setShowSecretGate(false); }} />
+      </>
+    );
+  }
+  if (showSecretGate) {
+    return (
+      <>
+        <GlobalStyle />
+        <SecretGate
+          onBack={() => setShowSecretGate(false)}
+          onUnlock={() => setShowSecretWorld(true)}
+        />
+      </>
+    );
+  }
+  if (activeItem?.entityType === 'project') {
+    return (
+      <>
+        <GlobalStyle />
+        <ProjectSpecificationPage projectData={activeItem} onBack={clearActive} />
+      </>
+    );
+  }
+  if (activeItem?.entityType === 'credential') {
+    return (
+      <>
+        <GlobalStyle />
+        <ProfessionalCredential credentialData={activeItem} onBack={clearActive} />
+      </>
+    );
+  }
+
+  return (
+    <>
+      <GlobalStyle />
+
+      {showGestureModal && (
+        <GestureNavModal
+          onClose={() => setShowGestureModal(false)}
+          onConfirm={handleGestureConfirm}
+          currentStatus={gestureNavStatus}
+        />
+      )}
+
+      <Header>
+        <Brand>
+          <Dot />
+          <BrandName>Hello, I'm <em>Archana Timilsina</em></BrandName>
+        </Brand>
+        <HeaderActions>
+          <GestureNavBtn
+            $active={gestureEnabled}
+            onClick={handleGestureNavBtnClick}
+            title={gestureEnabled ? 'Gesture Nav is ON — click to configure' : 'Click to enable Gesture Navigation'}
+          >
+            <span className="indicator" />
+            Gesture Nav
+          </GestureNavBtn>
+          <GithubBadge href="https://github.com/archanatimilsina" target="_blank" rel="noopener noreferrer">
+            GitHub ↗
+          </GithubBadge>
+        </HeaderActions>
+      </Header>
+
+      <MainLayout>
+        <LeftCol>
+          <Section>
+            <SectionLabel>Technical Ecosystem</SectionLabel>
+            <CardGrid>
+              {skills.map((cat, i) => (
+                <Card key={i} $skill>
+                  <CardTop>
+                    <CardTitle style={{ fontSize: '1rem', marginBottom: '0.1rem' }}>{cat.title}</CardTitle>
+                    <PillRow>{cat.pills.map((p, j) => <Pill key={j}>{p}</Pill>)}</PillRow>
+                  </CardTop>
+                </Card>
+              ))}
+            </CardGrid>
+          </Section>
+
+          <ProjectsSection onCardClick={handleCardClick} />
+          <CredentialsSection onCardClick={handleCardClick} />
+        </LeftCol>
+
+        <RightCol>
+          <CharPanel>
+            <ImgWrap>
+              <CharImg src={charImg} alt="Archana Timilsina" />
+            </ImgWrap>
+            <NamePlate>
+              <NameText>Archana Timilsina</NameText>
+              <RoleText>Full-Stack Developer · Test Automation · Nepal</RoleText>
+            </NamePlate>
+          </CharPanel>
+        </RightCol>
+      </MainLayout>
+    </>
+  );
+}
+
+
+
+
+
 
 const float = keyframes`
   0%   { transform: translateY(0px) rotate(0deg); }
@@ -502,380 +881,3 @@ const EmptyState = styled.div`
   font-family: 'Syne', sans-serif; font-size: 0.82rem; font-weight: 700;
   text-transform: uppercase; letter-spacing: 2px; color: #c8c3b8;
 `;
-
-
-function GestureNavModal({ onClose, onConfirm, currentStatus }) {
-  const modalRef = useRef(null);
-  useEffect(() => {
-    const handleKey = (e) => { if (e.key === 'Escape') onClose(); };
-    window.addEventListener('keydown', handleKey);
-    return () => window.removeEventListener('keydown', handleKey);
-  }, [onClose]);
-
-  const handleOverlayClick = (e) => {
-    if (modalRef.current && !modalRef.current.contains(e.target)) onClose();
-  };
-
-  const isActive = currentStatus === 'active';
-
-  return (
-    <ModalOverlay onClick={handleOverlayClick}>
-      <ModalBox ref={modalRef}>
-        <ModalCloseBtn onClick={onClose}>✕</ModalCloseBtn>
-        <ModalIconWrap>👆</ModalIconWrap>
-        <ModalTitle>Gesture Navigation</ModalTitle>
-        <ModalDesc>
-          Draw gestures on screen to navigate — no clicks, no scrolling. Triple-tap anywhere to activate the drawing canvas.
-        </ModalDesc>
-
-        <ModalHowTo>
-          <strong>How to use:</strong> triple-tap (touch / trackpad / mouse) anywhere on the page. A canvas appears — draw your gesture. Pause for a moment and it navigates automatically. Press <strong>Esc</strong> to cancel.
-        </ModalHowTo>
-
-        <ModalCurrentStatus $active={isActive}>
-          <span className="status-dot" />
-          Currently: {isActive ? 'Active' : 'Inactive'}
-        </ModalCurrentStatus>
-
-        <ModalBtnRow>
-          <ModalBtnYes onClick={() => onConfirm('active')}>
-            {isActive ? '✓ Keep Active' : '✓ Activate'}
-          </ModalBtnYes>
-          <ModalBtnNo onClick={() => onConfirm('inactive')}>
-            ✕ {isActive ? 'Deactivate' : 'Keep Off'}
-          </ModalBtnNo>
-        </ModalBtnRow>
-      </ModalBox>
-    </ModalOverlay>
-  );
-}
-
-
-function SecretGate({ onBack, onUnlock }) {
-  const [step,  setStep]  = useState('gate');
-  const [dream, setDream] = useState('');
-  const [wrong, setWrong] = useState(false);
-  const inputRef          = useRef(null);
-
-  useEffect(() => {
-    if (step === 'dream' && inputRef.current) inputRef.current.focus();
-  }, [step]);
-
-  const handleCheck = async () => {
-  const allowed = await verifySecret('dream', dream.trim());
-  if (allowed) {
-    onUnlock();
-  } else {
-    setWrong(true);
-    setTimeout(() => setWrong(false), 500);
-    setDream('');
-  }
-};
-
-  
-
-  return (
-    <SecretGatePage>
-      <GateBackBtn onClick={onBack}>← Back</GateBackBtn>
-      <GateGlyph>⛩️</GateGlyph>
-      <GateTitle>Ohhh!! You accidentally<br />unlocked the <span>secret area</span></GateTitle>
-      <GateSubtitle>Restricted zone · authorised access only</GateSubtitle>
-      <GateCard>
-        <GateLockBadge><span />Private Access</GateLockBadge>
-        <GateCardTitle>But unfortunately, only Archana can go inside through it.</GateCardTitle>
-        <GateCardDesc>
-          This space holds something private. Access is reserved for the one who knows the dream word.
-        </GateCardDesc>
-        {step === 'gate' && (
-          <GateAreYouRow>
-            <GateAreYouLabel>Are you Archana?</GateAreYouLabel>
-            <GateYesBtn onClick={() => setStep('dream')}>Yes</GateYesBtn>
-            <GateNoBtn  onClick={onBack}>No, go back</GateNoBtn>
-          </GateAreYouRow>
-        )}
-        {step === 'dream' && (
-          <>
-            <GateCardTitle style={{ marginBottom: '0.75rem' }}>Then type your dream →</GateCardTitle>
-            <DreamInputWrap>
-              <DreamInput
-                ref={inputRef}
-                value={dream}
-                onChange={e => setDream(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && handleCheck()}
-                className={wrong ? 'wrong' : ''}
-                placeholder="enter the dream word..."
-                spellCheck={false}
-                autoComplete="off"
-              />
-              <DreamArrowBtn onClick={handleCheck} aria-label="Submit">→</DreamArrowBtn>
-            </DreamInputWrap>
-            <DreamHint>Case sensitive · press enter or →</DreamHint>
-          </>
-        )}
-      </GateCard>
-    </SecretGatePage>
-  );
-}
-
-
-function useApiList(endpoint) {
-  const [data,    setData]    = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error,   setError]   = useState(null);
-
-  const load = async () => {
-    setLoading(true); setError(null);
-    try {
-      const res = await fetch(`${BASE}${endpoint}`);
-      if (!res.ok) throw new Error(`Server error ${res.status}`);
-      const json = await res.json();
-      setData(Array.isArray(json) ? json : json.results || []);
-    } catch (err) {
-      setError(err.message || 'Failed to load data.');
-    } finally {
-      setLoading(false);
-    }
-  };
-  useEffect(() => { load(); }, [endpoint]); // eslint-disable-line
-  return { data, loading, error, retry: load };
-}
-
-function normaliseProject(p) {
-  return {
-    ...p,
-    note:   p.description || '',
-    tech:   p.tech        || PROJECT_TYPE_LABEL[p.project_type] || 'Project',
-    github: p.github_link || null,
-    techStack: typeof p.tech_stack === 'object' && !Array.isArray(p.tech_stack) ? p.tech_stack : {},
-    architecturalHighlights: Array.isArray(p.features) ? p.features : [],
-    entityType: 'project',
-  };
-}
-function normalisePD(pd) {
-  return {
-    ...pd,
-    emoji:            PD_EMOJI[pd.name] || '🎓',
-    type:             (pd.name || '').toLowerCase(),
-    link:             pd.certificate_link || '#',
-    certificateImage: pd.certificate_image_url || null,
-    learnings:        Array.isArray(pd.learnings)       ? pd.learnings       : [],
-    skillsAcquired:   Array.isArray(pd.skills_acquired) ? pd.skills_acquired : [],
-    entityType: 'credential',
-  };
-}
-
-function ProjectsSection({ onCardClick }) {
-  const { data: projects, loading, error, retry } = useApiList('/projectListView/');
-  return (
-    <Section>
-      <SectionLabel>Engineering Projects</SectionLabel>
-      {loading && <LoadingRow><Spinner /><LoadText>Loading projects…</LoadText></LoadingRow>}
-      {!loading && error && <ErrorBanner>⚠ {error}<RetryBtn onClick={retry}>Retry</RetryBtn></ErrorBanner>}
-      {!loading && !error && projects.length === 0 && <EmptyState>No projects added yet</EmptyState>}
-      {!loading && !error && projects.length > 0 && (
-        <CardGrid>
-          {projects.map(proj => {
-            const norm = normaliseProject(proj);
-            return (
-              <Card key={proj.id} $clickable onClick={() => onCardClick(norm)}>
-                <CardTop>
-                  <CardMeta>
-                    <Tag>{PROJECT_TYPE_LABEL[proj.project_type] || proj.project_type || 'Project'}</Tag>
-                  </CardMeta>
-                  <CardTitle>{proj.name}</CardTitle>
-                  <CardSub>{proj.description || proj.tech}</CardSub>
-                </CardTop>
-                <CardFooter>
-                  <span>Inspect Architecture</span>
-                  <span className="arrow">→</span>
-                </CardFooter>
-              </Card>
-            );
-          })}
-        </CardGrid>
-      )}
-    </Section>
-  );
-}
-
-function CredentialsSection({ onCardClick }) {
-  const { data: pdItems, loading, error, retry } = useApiList('/pdListView/');
-  return (
-    <Section>
-      <SectionLabel>Professional Credentials</SectionLabel>
-      {loading && <LoadingRow><Spinner /><LoadText>Loading credentials…</LoadText></LoadingRow>}
-      {!loading && error && <ErrorBanner>⚠ {error}<RetryBtn onClick={retry}>Retry</RetryBtn></ErrorBanner>}
-      {!loading && !error && pdItems.length === 0 && <EmptyState>No credentials added yet</EmptyState>}
-      {!loading && !error && pdItems.length > 0 && (
-        <CardGrid>
-          {pdItems.map(pd => {
-            const norm = normalisePD(pd);
-            return (
-              <Card key={pd.id} $clickable onClick={() => onCardClick(norm)}>
-                <CardTop>
-                  <CardMeta>
-                    <DurationTag>{pd.duration}</DurationTag>
-                  </CardMeta>
-                  <CredentialType>{pd.name}</CredentialType>
-                  <CardTitle style={{ fontSize: '1.1rem' }}>{pd.subject}</CardTitle>
-                  <CardSub style={{ marginTop: '0.25rem' }}>{pd.company}</CardSub>
-                </CardTop>
-                <CardFooter>
-                  <span>View Certificate</span>
-                  <span className="arrow">→</span>
-                </CardFooter>
-              </Card>
-            );
-          })}
-        </CardGrid>
-      )}
-    </Section>
-  );
-}
-
-
-export default function PortfolioLanding() {
-  const [activeItem,       setActiveItem]       = useState(null);
-  const [showGestureModal, setShowGestureModal] = useState(false);
-  const [showSecretGate,   setShowSecretGate]   = useState(false);
-  const [showSecretWorld,  setShowSecretWorld]  = useState(false);
-
-  const [gestureNavStatus, setGestureNavStatus] = useState(
-    () => localStorage.getItem('gestureNav') || 'inactive'
-  );
-  const gestureEnabled = gestureNavStatus === 'active';
-
-useEffect(() => {
-  const bufRef = { current: '' };
-  const handler = async (e) => {
-    if (!/^[0-9]$/.test(e.key)) return;
-    if (['INPUT', 'TEXTAREA'].includes(document.activeElement?.tagName)) return;
-    bufRef.current = (bufRef.current + e.key).slice(-4);
-    if (bufRef.current.length === 4) {
-      const allowed = await verifySecret('gate', bufRef.current);
-      if (allowed) { bufRef.current = ''; setShowSecretGate(true); }
-    }
-  };
-  window.addEventListener('keydown', handler);
-  return () => window.removeEventListener('keydown', handler);
-}, []);
-
-  const handleCardClick = (item) => {
-    setActiveItem(item);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-  const clearActive = () => setActiveItem(null);
-
-  const handleGestureConfirm = (choice) => {
-    localStorage.setItem('gestureNav', choice);
-    setGestureNavStatus(choice);
-    setShowGestureModal(false);
-  };
-
-  const handleGestureNavBtnClick = () => {
-    setShowGestureModal(true);
-  };
-
-  if (showSecretWorld) {
-    return (
-      <>
-        <GlobalStyle />
-        <SecretWorld onBack={() => { setShowSecretWorld(false); setShowSecretGate(false); }} />
-      </>
-    );
-  }
-  if (showSecretGate) {
-    return (
-      <>
-        <GlobalStyle />
-        <SecretGate
-          onBack={() => setShowSecretGate(false)}
-          onUnlock={() => setShowSecretWorld(true)}
-        />
-      </>
-    );
-  }
-  if (activeItem?.entityType === 'project') {
-    return (
-      <>
-        <GlobalStyle />
-        <ProjectSpecificationPage projectData={activeItem} onBack={clearActive} />
-      </>
-    );
-  }
-  if (activeItem?.entityType === 'credential') {
-    return (
-      <>
-        <GlobalStyle />
-        <ProfessionalCredential credentialData={activeItem} onBack={clearActive} />
-      </>
-    );
-  }
-
-  return (
-    <>
-      <GlobalStyle />
-
-      {showGestureModal && (
-        <GestureNavModal
-          onClose={() => setShowGestureModal(false)}
-          onConfirm={handleGestureConfirm}
-          currentStatus={gestureNavStatus}
-        />
-      )}
-
-      <Header>
-        <Brand>
-          <Dot />
-          <BrandName>Hello, I'm <em>Archana Timilsina</em></BrandName>
-        </Brand>
-        <HeaderActions>
-          <GestureNavBtn
-            $active={gestureEnabled}
-            onClick={handleGestureNavBtnClick}
-            title={gestureEnabled ? 'Gesture Nav is ON — click to configure' : 'Click to enable Gesture Navigation'}
-          >
-            <span className="indicator" />
-            Gesture Nav
-          </GestureNavBtn>
-          <GithubBadge href="https://github.com/archanatimilsina" target="_blank" rel="noopener noreferrer">
-            GitHub ↗
-          </GithubBadge>
-        </HeaderActions>
-      </Header>
-
-      <MainLayout>
-        <LeftCol>
-          <Section>
-            <SectionLabel>Technical Ecosystem</SectionLabel>
-            <CardGrid>
-              {skills.map((cat, i) => (
-                <Card key={i} $skill>
-                  <CardTop>
-                    <CardTitle style={{ fontSize: '1rem', marginBottom: '0.1rem' }}>{cat.title}</CardTitle>
-                    <PillRow>{cat.pills.map((p, j) => <Pill key={j}>{p}</Pill>)}</PillRow>
-                  </CardTop>
-                </Card>
-              ))}
-            </CardGrid>
-          </Section>
-
-          <ProjectsSection onCardClick={handleCardClick} />
-          <CredentialsSection onCardClick={handleCardClick} />
-        </LeftCol>
-
-        <RightCol>
-          <CharPanel>
-            <ImgWrap>
-              <CharImg src={charImg} alt="Archana Timilsina" />
-            </ImgWrap>
-            <NamePlate>
-              <NameText>Archana Timilsina</NameText>
-              <RoleText>Full-Stack Developer · Test Automation · Nepal</RoleText>
-            </NamePlate>
-          </CharPanel>
-        </RightCol>
-      </MainLayout>
-    </>
-  );
-}

@@ -13,6 +13,7 @@ import AboutMe from './AboutMe';
 import ProjectsPage from './ProjectDetail';
 import ProfessionalDevPage from './ProfessionalDev';
 import MusicVibes from './music';
+import GestureDraw from './GestureDraw';
 
 
 const C = {
@@ -142,6 +143,7 @@ const SECTIONS = [
   { id:"project",          icon:"👩‍💻",  label:"Project",         group:"life"    },
   { id:"professionalDev",  icon:"💆‍♀️",  label:"professionalDev", group:"life"    },
   { id:"music",            icon:"🎧",  label:"music",           group:"life"    },
+  { id:"gestureDraw",      icon:"🎨",  label:"GestureDraw",     group:"life"    },
 ];
 
 
@@ -180,6 +182,7 @@ function SectionPage({ id, onBack }) {
   if (id === "project")         return <ProjectsPage       onBack={onBack} />;
   if (id === "professionalDev") return <ProfessionalDevPage onBack={onBack} />;
   if (id === "music")           return <MusicVibes         onBack={onBack} />;
+  if (id === "gestureDraw")           return <GestureDraw         onBack={onBack} />;
 
   return (
     <PlaceholderWrap>

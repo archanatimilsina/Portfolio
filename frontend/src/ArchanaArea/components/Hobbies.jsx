@@ -33,8 +33,8 @@ const fadeUp = keyframes`
 
 
 const API = {
-  list:   `${API_BASE}//api/hobbies/`,
-  detail: (id) => `${API_BASE}//api/hobbies/${id}/`,
+  list:   `${API_BASE}/api/hobbies/`,
+  detail: (id) => `${API_BASE}/api/hobbies/${id}/`,
 };
 
 const EMPTY_FORM = { emoji: '', title: '', text: '' };

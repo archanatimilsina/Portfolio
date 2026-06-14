@@ -28,7 +28,6 @@ export function useGestureCanvas({ onGesture }) {
   const handleTap = useCallback((e) => {
     const now = Date.now();
     tapTimesRef.current.push(now);
-
     tapTimesRef.current = tapTimesRef.current.filter(
       (t) => now - t <= TAP_WINDOW_MS
     );
@@ -37,7 +36,7 @@ export function useGestureCanvas({ onGesture }) {
       tapTimesRef.current = [];
       activateCanvas();
     }
-  }, []);
+  }, [activateCanvas]);
 
 
   const deactivateCanvas = useCallback(() => {
