@@ -113,21 +113,21 @@ const GlobalStyle = createGlobalStyle`
 `;
 
 
-const IMGS = [
-  { seed:"s1",  top:7,  left:2,  w:148, h:190, ai:0, delay:0.0,  rot:-3 },
-  { seed:"s2",  top:10, left:20, w:128, h:168, ai:1, delay:0.5,  rot: 2 },
-  { seed:"s3",  top:5,  left:40, w:162, h:205, ai:2, delay:0.9,  rot:-1 },
-  { seed:"s4",  top:8,  left:62, w:138, h:178, ai:0, delay:0.3,  rot: 4 },
-  { seed:"s5",  top:7,  left:80, w:142, h:182, ai:1, delay:0.7,  rot:-2 },
-  { seed:"s6",  top:47, left:1,  w:155, h:198, ai:2, delay:1.1,  rot: 3 },
-  { seed:"s7",  top:50, left:19, w:122, h:162, ai:0, delay:0.2,  rot:-4 },
-  { seed:"s8",  top:44, left:37, w:170, h:212, ai:1, delay:0.8,  rot: 1 },
-  { seed:"s9",  top:48, left:59, w:133, h:172, ai:2, delay:0.4,  rot:-2 },
-  { seed:"s10", top:45, left:79, w:147, h:188, ai:0, delay:1.0,  rot: 3 },
-  { seed:"s11", top:27, left:9,  w:118, h:152, ai:1, delay:0.1,  rot:-1 },
-  { seed:"s12", top:29, left:50, w:160, h:200, ai:2, delay:0.6,  rot: 2 },
-  { seed:"s13", top:25, left:70, w:135, h:175, ai:0, delay:0.35, rot:-3 },
-];
+// const IMGS = [
+//   { seed:"s1",  top:7,  left:2,  w:148, h:190, ai:0, delay:0.0,  rot:-3 },
+//   { seed:"s2",  top:10, left:20, w:128, h:168, ai:1, delay:0.5,  rot: 2 },
+//   { seed:"s3",  top:5,  left:40, w:162, h:205, ai:2, delay:0.9,  rot:-1 },
+//   { seed:"s4",  top:8,  left:62, w:138, h:178, ai:0, delay:0.3,  rot: 4 },
+//   { seed:"s5",  top:7,  left:80, w:142, h:182, ai:1, delay:0.7,  rot:-2 },
+//   { seed:"s6",  top:47, left:1,  w:155, h:198, ai:2, delay:1.1,  rot: 3 },
+//   { seed:"s7",  top:50, left:19, w:122, h:162, ai:0, delay:0.2,  rot:-4 },
+//   { seed:"s8",  top:44, left:37, w:170, h:212, ai:1, delay:0.8,  rot: 1 },
+//   { seed:"s9",  top:48, left:59, w:133, h:172, ai:2, delay:0.4,  rot:-2 },
+//   { seed:"s10", top:45, left:79, w:147, h:188, ai:0, delay:1.0,  rot: 3 },
+//   { seed:"s11", top:27, left:9,  w:118, h:152, ai:1, delay:0.1,  rot:-1 },
+//   { seed:"s12", top:29, left:50, w:160, h:200, ai:2, delay:0.6,  rot: 2 },
+//   { seed:"s13", top:25, left:70, w:135, h:175, ai:0, delay:0.35, rot:-3 },
+// ];
 
 
 const SECTIONS = [
@@ -356,11 +356,8 @@ export default function MyArea({ onBack }) {
             <HeroChip><span />Restricted Zone</HeroChip>
             <HeroTitle>Secret <em>Admin</em> Space</HeroTitle>
             <HeroSub>Hidden layer inside portfolio system</HeroSub>
-            <HeroHint>
-              🔑 Type <strong>9988</strong> to unlock the sidebar
-            </HeroHint>
 
-            <FloatArea>
+            {/* <FloatArea>
               {IMGS.map((img, i) => (
                 <ImgWrap key={img.seed} style={{top:`${img.top}%`,left:`${img.left}%`}}>
                   <FloatImg
@@ -371,13 +368,13 @@ export default function MyArea({ onBack }) {
                     $delay={img.delay}
                     $rot={img.rot}
                     style={{width:img.w,height:img.h}}
-                  />
-                  <ImgLabel className="img-label">
+                  /> */}
+                  {/* <ImgLabel className="img-label">
                     asset_{String(i+1).padStart(2,"0")}
                   </ImgLabel>
                 </ImgWrap>
               ))}
-            </FloatArea>
+            </FloatArea> */}
           </Hero>
 
           <DataSection>
