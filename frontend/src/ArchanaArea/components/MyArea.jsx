@@ -275,7 +275,6 @@ export default function MyArea({ onBack }) {
       <SBTop>
         <SBTag>Access Level · Root</SBTag>
         <SBTitle>Control Panel</SBTitle>
-        <SBUnlocked><span />Unlocked · 9988</SBUnlocked>
       </SBTop>
       <SBNav>
         <SBGroupLabel>Explore</SBGroupLabel>
