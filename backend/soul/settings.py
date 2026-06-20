@@ -49,7 +49,6 @@ CORS_ALLOWED_ORIGINS = [
     "https://archana-timilsina.com.np",   
     "http://localhost:5173",
     "http://localhost:3000",
-    "https://portfolio-79vi.onrender.com"
 ]
 # Application definition
 

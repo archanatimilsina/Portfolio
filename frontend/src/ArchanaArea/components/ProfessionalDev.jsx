@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import styled, { createGlobalStyle, keyframes } from 'styled-components';
-
+export const revalidate = 60;
 const API_BASE = import.meta.env.VITE_API_URL;
 const GlobalStyle = createGlobalStyle`
   @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap');
@@ -94,7 +94,7 @@ export default function ProfessionalDevPage({ onBack }) {
     setLoading(true);
     setApiError('');
     try {
-      const res = await fetch(`${BASE}/pdListView/`);
+      const res = await fetch(`${BASE}/pdListView/`,{next: { revalidate: 60 } });
       if (!res.ok) throw new Error(`Server error: ${res.status}`);
       const data = await res.json();
       setItems(Array.isArray(data) ? data : data.results || []);
@@ -175,6 +175,7 @@ export default function ProfessionalDevPage({ onBack }) {
     try {
       const res = await fetch(`${BASE}/pdListView/`, {
   method: 'POST',
+  next: { revalidate: 60 } ,
   body:   buildFormData(),  
 });
       if (!res.ok) {
@@ -199,6 +200,7 @@ export default function ProfessionalDevPage({ onBack }) {
     try {
       const res = await fetch(`${BASE}/pdDetailView/${editTarget.id}/`, {
   method: 'PATCH',
+  next: { revalidate: 60 } ,
   body:   buildFormData(),
 });
       if (!res.ok) {
@@ -219,7 +221,7 @@ export default function ProfessionalDevPage({ onBack }) {
     setDeletingId(id);
     setApiError('');
     try {
-      const res = await fetch(`${BASE}/pdDetailView/${id}/`, { method: 'DELETE' });
+      const res = await fetch(`${BASE}/pdDetailView/${id}/`, {next: { revalidate: 60 } , method: 'DELETE' });
       if (!res.ok && res.status !== 204) throw new Error('Delete failed.');
       setItems(prev => prev.filter(it => it.id !== id));
     } catch (err) {

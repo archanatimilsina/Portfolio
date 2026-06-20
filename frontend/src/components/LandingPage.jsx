@@ -5,7 +5,7 @@ import charImg from '../assets/img/397192bdf6375902aaab9436359d2dc0.jpg';
 import ProjectSpecificationPage from './projectDescriptionPage';
 import ProfessionalCredential from './ProfessionalCredential';
 import SecretWorld from '../ArchanaArea/components/MyArea';
-
+export const revalidate = 60;
 const API_BASE = import.meta.env.VITE_API_URL;
 const BASE = `${API_BASE}/api`;
 
@@ -37,7 +37,8 @@ const verifySecret = async (field, value) => {
     const res = await fetch(`${BASE}/verify-secret/`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ field, value }),
+      next: { revalidate: 60 } ,
+      body: JSON.stringify({ field, value })
     });
     const data = await res.json();
     return data.allowed;
@@ -168,7 +169,7 @@ function useApiList(endpoint) {
   const load = async () => {
     setLoading(true); setError(null);
     try {
-      const res = await fetch(`${BASE}${endpoint}`);
+      const res = await fetch(`${BASE}${endpoint}`,{next: { revalidate: 60 } });
       if (!res.ok) throw new Error(`Server error ${res.status}`);
       const json = await res.json();
       setData(Array.isArray(json) ? json : json.results || []);

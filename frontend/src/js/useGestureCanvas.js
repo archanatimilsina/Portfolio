@@ -1,6 +1,4 @@
 import { useEffect, useRef, useCallback } from "react";
-
-
 const TAP_WINDOW_MS   = 600;  
 const TAP_REQUIRED    = 3;    
 const STROKE_PAUSE_MS = 800;   
@@ -73,7 +71,7 @@ export function useGestureCanvas({ onGesture }) {
     if (!activeRef.current || !currentStrokeRef.current) return;
     const stroke = currentStrokeRef.current;
     currentStrokeRef.current = null;
-
+    
     if (stroke.length >= MIN_POINTS) {
       strokesRef.current.push(stroke);
     }

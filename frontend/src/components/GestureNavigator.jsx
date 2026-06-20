@@ -97,7 +97,6 @@ Object.entries(BUILT_IN_TEMPLATES).forEach(([name, strokes]) => {
   recognizer.addTemplate(name, strokes);
 });
 
-
 export default function GestureNavigator() {
   const navigate           = useNavigate();
   const [active, setActive]   = useState(false);

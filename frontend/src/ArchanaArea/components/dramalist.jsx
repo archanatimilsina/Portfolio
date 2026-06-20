@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import styled, { createGlobalStyle, keyframes } from 'styled-components';
 const API_BASE = import.meta.env.VITE_API_URL;
-
+export const revalidate = 60;
 const C = {
   bg:      '#f6f5f0',
   white:   '#ffffff',
@@ -94,7 +94,7 @@ export default function Drama({ onBack }) {
     setLoading(true);
     setApiError('');
     try {
-      const res = await fetch(`${BASE_URL}/watchlist/`);
+      const res = await fetch(`${BASE_URL}/watchlist/`,{next: { revalidate: 60 } });
       if (!res.ok) throw new Error(`Server error: ${res.status}`);
       const data = await res.json();
       setItems(Array.isArray(data) ? data : data.results || []);
@@ -176,6 +176,7 @@ export default function Drama({ onBack }) {
         method,
         headers: { 'Content-Type': 'application/json' },
         body:    JSON.stringify(buildPayload()),
+        next: { revalidate: 60 } 
       });
 
       if (!res.ok) {
@@ -205,7 +206,7 @@ export default function Drama({ onBack }) {
     setSavingId(delTarget.id);
     setApiError('');
     try {
-      const res = await fetch(`${BASE_URL}/watchlist/${delTarget.id}/`, { method: 'DELETE' });
+      const res = await fetch(`${BASE_URL}/watchlist/${delTarget.id}/`, {next: { revalidate: 60 } , method: 'DELETE' });
       if (!res.ok && res.status !== 204) throw new Error('Delete failed.');
       setItems(prev => prev.filter(x => x.id !== delTarget.id));
       showToast(`"${delTarget.title}" removed.`, '🗑');

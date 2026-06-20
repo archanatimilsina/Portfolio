@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import styled, { keyframes, createGlobalStyle } from 'styled-components';
-
 const API_BASE = import.meta.env.VITE_API_URL;
+export const revalidate = 60;
 const GlobalStyle = createGlobalStyle`
   @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@300;400&display=swap');
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -65,7 +65,7 @@ export default function Wishlist() {
     setLoading(true);
     setFetchError('');
     try {
-      const res = await fetch(API.list);
+      const res = await fetch(API.list,{next: { revalidate: 60 } });
       if (!res.ok) throw new Error(`Server error ${res.status}`);
       setWishes(await res.json());
     } catch {
@@ -89,6 +89,7 @@ export default function Wishlist() {
       const res = await fetch(API.list, {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
+        next: { revalidate: 60 } ,
         body:    JSON.stringify({
           emoji: newWish.emoji.trim() || '✨',
           wish:  newWish.wish.trim(),
@@ -124,6 +125,7 @@ export default function Wishlist() {
       const res = await fetch(API.detail(id), {
         method:  'PUT',
         headers: { 'Content-Type': 'application/json' },
+        next: { revalidate: 60 } ,
         body:    JSON.stringify({
           emoji: editWish.emoji.trim() || '✨',
           wish:  editWish.wish.trim(),
@@ -148,7 +150,7 @@ export default function Wishlist() {
   const handleDelete = async (id) => {
     if (!window.confirm('Remove this wish permanently?')) return;
     try {
-      const res = await fetch(API.detail(id), { method: 'DELETE' });
+      const res = await fetch(API.detail(id), { method: 'DELETE' ,next: { revalidate: 60 } });
       if (!res.ok) throw new Error('Delete failed.');
       setWishes(p => p.filter(w => w.id !== id));
       showToast('Wish removed.');

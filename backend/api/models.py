@@ -145,9 +145,6 @@ class AboutMe(models.Model):
     def __str__(self):
         return f"{self.name} ({self.clearance_level})"
     
-
-
-
 class DayLog(models.Model):
     MOOD_CHOICES = [
         ('Happy', 'Happy'),
@@ -157,12 +154,10 @@ class DayLog(models.Model):
         ('Wired', 'Wired'),
         ('Tired', 'Tired'),
     ]
-
     SOURCE_CHOICES = [
         ('local', 'Local'),
         ('remote', 'Remote'),
     ]
-
     date = models.DateField(
     )
     mood = models.CharField(

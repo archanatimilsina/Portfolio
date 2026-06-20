@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import styled, { createGlobalStyle, keyframes } from 'styled-components';
-
+export const revalidate = 60;
 const API_BASE = import.meta.env.VITE_API_URL;
 const GlobalStyle = createGlobalStyle`
   @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap');
@@ -81,7 +81,7 @@ export default function ProjectsPage({ onBack }) {
     setLoading(true);
     setApiError('');
     try {
-      const res = await fetch(`${BASE}/projectListView/`);
+      const res = await fetch(`${BASE}/projectListView/`,{next: { revalidate: 60 } });
       if (!res.ok) throw new Error(`Server error: ${res.status}`);
       const data = await res.json();
       setProjects(Array.isArray(data) ? data : data.results || []);
@@ -146,6 +146,7 @@ export default function ProjectsPage({ onBack }) {
       const res = await fetch(`${BASE}/projectListView/`, {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
+        next: { revalidate: 60 } ,
         body:    JSON.stringify(form),
       });
       if (!res.ok) {
@@ -172,6 +173,7 @@ export default function ProjectsPage({ onBack }) {
       const res = await fetch(`${BASE}/projectDetailView/${editTarget.id}/`, {
         method:  'PATCH',
         headers: { 'Content-Type': 'application/json' },
+        next: { revalidate: 60 } ,
         body:    JSON.stringify(form),
       });
       if (!res.ok) {
@@ -193,7 +195,7 @@ export default function ProjectsPage({ onBack }) {
     setDeletingId(id);
     setApiError('');
     try {
-      const res = await fetch(`${BASE}/projectDetailView/${id}/`, { method: 'DELETE' });
+      const res = await fetch(`${BASE}/projectDetailView/${id}/`, {next: { revalidate: 60 } , method: 'DELETE' });
       if (!res.ok && res.status !== 204) throw new Error('Delete failed.');
       setProjects(prev => prev.filter(p => p.id !== id));
     } catch (err) {

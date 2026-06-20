@@ -47,7 +47,6 @@ class DayLogDetailView(generics.RetrieveUpdateDestroyAPIView):
     parser_classes = [MultiPartParser, FormParser, JSONParser]
 
 
-
 class ScrapbookArchiveAPIView(generics.ListCreateAPIView):
     queryset = ScrapbookStamp.objects.all()
     serializer_class = ScrapbookStampSerializer
@@ -57,8 +56,6 @@ class ScrapbookStampDetailAPIView(generics.RetrieveUpdateDestroyAPIView):
     queryset = ScrapbookStamp.objects.all()
     serializer_class = ScrapbookStampSerializer
     parser_classes = [MultiPartParser, FormParser, JSONParser]
-
-
 
 class NoteListCreateAPIView(generics.ListCreateAPIView):
 

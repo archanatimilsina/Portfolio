@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import styled, { createGlobalStyle, keyframes, css } from 'styled-components';
 const API_BASE = import.meta.env.VITE_API_URL;
-
+export const revalidate = 60;
 const GlobalStyle = createGlobalStyle`
   @import url('https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Clash+Display:wght@400;500;600;700&display=swap');
 
@@ -94,7 +94,7 @@ const AboutMe = () => {
       const fetchRecord = async () => {
     setMode('loading');
     try {
-      const res = await fetch(`${BASE_URL}/aboutme`);
+      const res = await fetch(`${BASE_URL}/aboutme`,{next: { revalidate: 60 } });
       if (res.ok) {
         const data = await res.json();
         const records = Array.isArray(data) ? data : data.results || [];
@@ -146,6 +146,7 @@ const AboutMe = () => {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
+        next: { revalidate: 60 } 
       });
       if (res.ok) {
         const created = await res.json();
@@ -188,6 +189,7 @@ const AboutMe = () => {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
+        next: { revalidate: 60 } 
       });
       if (res.ok) {
         const updated = await res.json();
@@ -213,7 +215,7 @@ const AboutMe = () => {
     if (!window.confirm('CONFIRM DELETION: This will permanently erase the operative profile from the archive.')) return;
     setMode('loading');
     try {
-      const res = await fetch(`${BASE_URL}/aboutme/${existingRecord.id}/`, { method: 'DELETE' });
+      const res = await fetch(`${BASE_URL}/aboutme/${existingRecord.id}/`, { method: 'DELETE',next: { revalidate: 60 }  });
       if (res.ok || res.status === 204) {
         setExistingRecord(null);
         setFormData({ name: '', address: '', phone: '', email: '', baseSecretCode: '', sidebarCode: '', portalDream: '' });

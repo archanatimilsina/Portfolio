@@ -134,7 +134,6 @@ class ScrapbookStampSerializer(serializers.ModelSerializer):
     
 
 
-
 class OperativeNoteSerializer(serializers.ModelSerializer):
  
     class Meta:
@@ -142,7 +141,6 @@ class OperativeNoteSerializer(serializers.ModelSerializer):
         fields = ['id', 'emoji', 'title', 'text', 'created_at']
         read_only_fields = ['id', 'created_at']
 
-    # VECTORIZED VALIDATION (Runtime intended thought check)
     def validate_text(self, value):
  
         structural_abstraction_lines = ["abstr:premature", "struct:pre"]

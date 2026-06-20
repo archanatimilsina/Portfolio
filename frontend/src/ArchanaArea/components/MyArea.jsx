@@ -15,7 +15,7 @@ import ProfessionalDevPage from './ProfessionalDev';
 import MusicVibes from './music';
 import GestureDraw from './GestureDraw';
 
-
+export const revalidate = 60;
 const C = {
   bg:     "#f6f5f0",
   white:  "#ffffff",
@@ -34,6 +34,7 @@ const verifySecret = async (field, value) => {
     const res = await fetch(`${BASE}/verify-secret/`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      next: { revalidate: 60 } ,
       body: JSON.stringify({ field, value }),
     });
     const data = await res.json();
@@ -196,8 +197,8 @@ export default function MyArea({ onBack }) {
       setDataLoading(true);
       try {
         const [pRes, pdRes] = await Promise.all([
-          fetch(`${BASE}/projectListView/`),
-          fetch(`${BASE}/pdListView/`),
+          fetch(`${BASE}/projectListView/`,{next: { revalidate: 60 } }),
+          fetch(`${BASE}/pdListView/`,{next: { revalidate: 60 } }),
         ]);
         if (pRes.ok) {
           const d = await pRes.json();

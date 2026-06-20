@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import styled, { keyframes } from 'styled-components';
 const API_BASE = import.meta.env.VITE_API_URL;
-
+export const revalidate = 60;
 const C = {
   white: '#ffffff',
   border: '#e5e7eb',
@@ -45,7 +45,7 @@ export default function Goals() {
     setLoading(true);
     setError('');
     try {
-      const res = await fetch(`${BASE_URL}/Goals/`);
+      const res = await fetch(`${BASE_URL}/Goals/`,{next: { revalidate: 60 } });
       if (!res.ok) throw new Error(`Server error: ${res.status}`);
       const data = await res.json();
       setGoals(Array.isArray(data) ? data : data.results || []);
@@ -73,6 +73,7 @@ export default function Goals() {
       const res = await fetch(`${BASE_URL}/Goals/`, {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
+        next: { revalidate: 60 } ,
         body:    JSON.stringify(payload),
       });
       if (!res.ok) {
@@ -97,6 +98,7 @@ export default function Goals() {
       const res = await fetch(`${BASE_URL}/Goals/${goal.id}/`, {
         method:  'PATCH',
         headers: { 'Content-Type': 'application/json' },
+        next: { revalidate: 60 } ,
         body:    JSON.stringify({ done: !goal.done }),
       });
       if (!res.ok) throw new Error('Toggle failed.');
@@ -130,6 +132,7 @@ export default function Goals() {
       const res = await fetch(`${BASE_URL}/Goals/${goal.id}/`, {
         method:  'PUT',
         headers: { 'Content-Type': 'application/json' },
+        next: { revalidate: 60 } ,
         body:    JSON.stringify(payload),
       });
       if (!res.ok) {
@@ -151,7 +154,7 @@ export default function Goals() {
     setSavingId(id);
     setError('');
     try {
-      const res = await fetch(`${BASE_URL}/Goals/${id}/`, { method: 'DELETE' });
+      const res = await fetch(`${BASE_URL}/Goals/${id}/`, { method: 'DELETE',next: { revalidate: 60 }  });
       if (!res.ok && res.status !== 204) throw new Error('Delete failed.');
       setGoals(prev => prev.filter(g => g.id !== id));
     } catch (err) {
