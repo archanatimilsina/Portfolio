@@ -175,22 +175,14 @@ class DreamWishSerializer(serializers.ModelSerializer):
 
 
 class WatchlistItemSerializer(serializers.ModelSerializer):
-    note = serializers.CharField(required=False, allow_blank=True, default='')
-    emoji = serializers.CharField(required=False, allow_blank=True, default='🎬')
-
     class Meta:
         model = WatchlistItem
         fields = [
-            'id', 
-            'type', 
-            'title', 
-            'genre', 
-            'year', 
-            'episodes', 
-            'rating', 
-            'status', 
-            'emoji', 
-            'note'
+            'id',
+            'type',
+            'title',
+            'genre',
+            'status',
         ]
 
     def validate_title(self, value):
@@ -202,46 +194,37 @@ class WatchlistItemSerializer(serializers.ModelSerializer):
         if not value.strip():
             raise serializers.ValidationError("Genre selection is mandatory.")
         return value
-    
 
+from rest_framework import serializers
+from .models import OperativeGoal, GoalDayStatus
+
+
+class GoalDayStatusSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = GoalDayStatus
+        fields = ['id', 'day_number', 'done', 'updated_at']
+        read_only_fields = ['id', 'day_number', 'updated_at']
 
 
 class OperativeGoalSerializer(serializers.ModelSerializer):
+    day_statuses = GoalDayStatusSerializer(many=True, read_only=True)
+    days_completed = serializers.IntegerField(read_only=True)
 
     class Meta:
         model = OperativeGoal
-        fields = ['id', 'emoji', 'title', 'timeline', 'done', 'created_at']
-        read_only_fields = ['id', 'created_at']
+        fields = [
+            'id', 'title', 'timeline', 'done',
+            'day_statuses', 'days_completed',
+            'created_at', 'updated_at',
+        ]
+        read_only_fields = ['id', 'done', 'created_at', 'updated_at']
 
-    def validate_title(self, value):
- 
-        structural_abstraction_lines = ["abstr:premature", "struct:pre"]
-        if any(token in value.lower() for token in structural_abstraction_lines):
-            raise serializers.ValidationError(
-                "INTERNAL THOUGHT CRITICAL FAILURE: Objective contains premature structural abstraction lines."
-            )
-        return value.strip()
-    
-
-
-class OperativeGoalSerializer(serializers.ModelSerializer):
-
-    class Meta:
-        model = OperativeGoal
-        fields = ['id', 'emoji', 'title', 'timeline', 'done', 'created_at']
-        read_only_fields = ['id', 'created_at']
-
-    def validate_title(self, value):
- 
-        structural_abstraction_lines = ["abstr:premature", "struct:pre"]
-        if any(token in value.lower() for token in structural_abstraction_lines):
-            raise serializers.ValidationError(
-                "INTERNAL THOUGHT CRITICAL FAILURE: Objective contains premature structural abstraction lines."
-            )
-        return value.strip()
-    
-
-
+    def validate_timeline(self, value):
+        if value <= 0:
+            raise serializers.ValidationError("Timeline must be a positive number of days.")
+        if value > 365:
+            raise serializers.ValidationError("Timeline can't exceed 365 days.")
+        return value
 
 
 class HobbyItemSerializer(serializers.ModelSerializer):

@@ -1,11 +1,11 @@
 from django.shortcuts import render
-from rest_framework import generics
-from .models import ProfessionalDevelopment, Project, AboutMe, DayLog, OperativeGoal, ScrapbookStamp, OperativeNote, DreamWish, WatchlistItem, HobbyItem, MusicVibeItem, Task
-from .serializers import ProfessionalDevelopmentSerializer, ProjectSerializer, DreamWishSerializer, WatchlistItemSerializer, HobbyItemSerializer, MusicVibeItemSerializer, TaskSerializer, AboutMeSerializer, DayLogSerializer, OperativeNoteSerializer, ScrapbookStampSerializer, DreamWishSerializer, WatchlistItemSerializer, OperativeGoalSerializer
+from rest_framework import generics, status
+from .models import ProfessionalDevelopment, Project, AboutMe, DayLog, OperativeGoal, GoalDayStatus, ScrapbookStamp, OperativeNote, DreamWish, WatchlistItem, HobbyItem, MusicVibeItem, Task
+from .serializers import ProfessionalDevelopmentSerializer, ProjectSerializer, DreamWishSerializer, HobbyItemSerializer, MusicVibeItemSerializer, TaskSerializer, AboutMeSerializer, DayLogSerializer, OperativeNoteSerializer, ScrapbookStampSerializer, DreamWishSerializer, WatchlistItemSerializer, OperativeGoalSerializer
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser 
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework import status
+from django.shortcuts import get_object_or_404
 
 
 class projectListView(generics.ListCreateAPIView):
@@ -80,31 +80,37 @@ class DreamWishDetailAPIView(generics.RetrieveUpdateDestroyAPIView):
 class WatchlistItemListCreateAPIView(generics.ListCreateAPIView):
     queryset = WatchlistItem.objects.all()
     serializer_class = WatchlistItemSerializer
-
-
+ 
+ 
 class WatchlistItemRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView):
     queryset = WatchlistItem.objects.all()
     serializer_class = WatchlistItemSerializer
+ 
 
 class GoalListCreateAPIView(generics.ListCreateAPIView):
-    queryset = OperativeGoal.objects.all()
+    queryset = OperativeGoal.objects.prefetch_related('day_statuses').all()
     serializer_class = OperativeGoalSerializer
+
 
 class GoalRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView):
-    queryset = OperativeGoal.objects.all()
+    queryset = OperativeGoal.objects.prefetch_related('day_statuses').all()
     serializer_class = OperativeGoalSerializer
 
 
+class GoalDayToggleAPIView(APIView):
+    def patch(self, request, pk, day_number):
+        goal = get_object_or_404(OperativeGoal, pk=pk)
+        day_status = get_object_or_404(
+            GoalDayStatus, goal=goal, day_number=day_number
+        )
 
-class GoalListCreateAPIView(generics.ListCreateAPIView):
+        day_status.done = not day_status.done
+        day_status.save()
 
-    queryset = OperativeGoal.objects.all()
-    serializer_class = OperativeGoalSerializer
+        goal.sync_done_status()
 
-class GoalRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView):
-
-    queryset = OperativeGoal.objects.all()
-    serializer_class = OperativeGoalSerializer
+        serializer = OperativeGoalSerializer(goal)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 class HobbyListCreateAPIView(generics.ListCreateAPIView):
     queryset = HobbyItem.objects.all()
