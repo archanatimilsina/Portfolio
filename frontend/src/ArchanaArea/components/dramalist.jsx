@@ -21,23 +21,21 @@ const C = {
 const BASE_URL = `${API_BASE}/api`;
 
 const EMPTY_FORM = {
-  type: 'drama', title: '', genre: '', rating: '', status: 'Plan to Watch',
-  emoji: '🎬', note: '', year: '', episodes: '',
+  type: 'drama', title: '', genre: '', status: 'Plan to Watch',
 };
 
-const TYPE_TABS  = ['All', 'drama', 'movie', 'anime'];
-const STATUS_OPT = ['Watching', 'Finished', 'Plan to Watch', 'On Hold', 'Dropped'];
-const TYPE_OPT   = ['drama', 'movie', 'anime'];
+const TYPE_TABS  = ['All', 'drama', 'movie', 'anime', 'book', 'manga'];
+const STATUS_OPT = ['Watching', 'Completed', 'Plan to Watch', 'On Hold', 'Dropped'];
+const TYPE_OPT   = ['drama', 'movie', 'anime', 'book', 'manga'];
 const GENRE_OPT  = [
-  'Slice of Life', 'Romance', 'Thriller', 'Action', 'Drama', 'Fantasy', 'Historical',
+  'Thriller', 'Romance', 'Action', 'Drama', 'Fantasy', 'BL', 'Horror', 'Historical',
   'Crime/Dark Comedy', 'Romance/Fantasy', 'Horror/Action', 'Action/Superhero',
   'Action/Dark', 'Romance/Music', 'Drama/Fantasy', 'Adventure/Fantasy', 'Sci-Fi', 'Comedy',
 ];
-const EMOJI_OPT = ['🎬','🎥','📺','🎭','💛','🌧','🌹','📻','🕯','🎸','🪂','🌻','🌊','⚡','🏠','🚂','🌅','💌','🐉','🎹','⚔️','🌸','🔥','💫','🎃','👁','🌙','🌟'];
 
 const STATUS_COLOR = {
   'Watching':      { bg:'#d8f3dc', color:'#2d6a4f', border:'#b7e4c7' },
-  'Finished':      { bg:C.muted,   color:C.soft,    border:C.border  },
+  'Completed':     { bg:C.muted,   color:C.soft,    border:C.border  },
   'Plan to Watch': { bg:'#e8f4fd', color:'#1a6fa8', border:'#b3d9f5' },
   'On Hold':       { bg:'#fdf6dc', color:'#9a7a00', border:'#f0d96a' },
   'Dropped':       { bg:'#fdecea', color:C.red,     border:'#f5b7b1' },
@@ -47,6 +45,8 @@ const TYPE_COLOR = {
   drama: { bg:'#ede7f6', color:'#5e35b1', border:'#c5b4e8' },
   movie: { bg:'#fce4ec', color:'#c2185b', border:'#f48fb1' },
   anime: { bg:'#e3f2fd', color:'#1565c0', border:'#90caf9' },
+  book:  { bg:'#fff3e0', color:'#e65100', border:'#ffcc80' },
+  manga: { bg:'#f1f8e9', color:'#558b2f', border:'#c5e1a5' },
 };
 
 
@@ -124,15 +124,10 @@ export default function Drama({ onBack }) {
 
   const openEdit = (item) => {
     setForm({
-      type:     item.type     || 'drama',
-      title:    item.title    || '',
-      genre:    item.genre    || '',
-      rating:   item.rating   != null ? String(item.rating) : '',
-      status:   item.status   || 'Plan to Watch',
-      emoji:    item.emoji    || '🎬',
-      note:     item.note     || '',
-      year:     item.year     != null ? String(item.year)   : '',
-      episodes: item.episodes != null ? String(item.episodes) : '',
+      type:   item.type   || 'drama',
+      title:  item.title  || '',
+      genre:  item.genre  || '',
+      status: item.status || 'Plan to Watch',
     });
     setErrors({});
     setEditItem(item);
@@ -144,20 +139,14 @@ export default function Drama({ onBack }) {
     const e = {};
     if (!form.title.trim()) e.title  = true;
     if (!form.genre.trim()) e.genre  = true;
-    if (!form.rating)       e.rating = true;
     return e;
   };
 
   const buildPayload = () => ({
-    type:     form.type,
-    title:    form.title.trim(),
-    genre:    form.genre.trim(),
-    rating:   Number(form.rating),
-    status:   form.status,
-    emoji:    form.emoji || '🎬',
-    note:     form.note  || '',
-    year:     form.year     ? Number(form.year)     : null,
-    episodes: form.episodes ? Number(form.episodes) : null,
+    type:   form.type,
+    title:  form.title.trim(),
+    genre:  form.genre.trim(),
+    status: form.status,
   });
 
   const handleSave = async () => {
@@ -223,26 +212,24 @@ export default function Drama({ onBack }) {
     .filter(x => {
       const q = search.toLowerCase();
       return x.title.toLowerCase().includes(q) ||
-             x.genre.toLowerCase().includes(q)  ||
-             (x.note || '').toLowerCase().includes(q);
+             x.genre.toLowerCase().includes(q);
     })
     .sort((a, b) => {
-      if (sort === 'rating-desc') return Number(b.rating) - Number(a.rating);
-      if (sort === 'rating-asc')  return Number(a.rating) - Number(b.rating);
       if (sort === 'title-az')    return a.title.localeCompare(b.title);
       if (sort === 'title-za')    return b.title.localeCompare(a.title);
-      if (sort === 'year-desc')   return Number(b.year || 0) - Number(a.year || 0);
       return 0;
     });
 
   const counts = {
     total:    items.length,
     watching: items.filter(x => x.status === 'Watching').length,
-    finished: items.filter(x => x.status === 'Finished').length,
+    completed:items.filter(x => x.status === 'Completed').length,
     planned:  items.filter(x => x.status === 'Plan to Watch').length,
     drama:    items.filter(x => x.type   === 'drama').length,
     movie:    items.filter(x => x.type   === 'movie').length,
     anime:    items.filter(x => x.type   === 'anime').length,
+    book:     items.filter(x => x.type   === 'book').length,
+    manga:    items.filter(x => x.type   === 'manga').length,
   };
 
   const isSavingNew = savingId === 'new';
@@ -268,8 +255,8 @@ export default function Drama({ onBack }) {
         <Main>
           <PageHeader>
             <PageChip><span />Personal Collection</PageChip>
-            <PageTitle>Dramas, <em>Movies</em> & Anime</PageTitle>
-            <PageDesc>Every title that has made me feel something. Ratings are final. No debate.</PageDesc>
+            <PageTitle>Dramas, <em>Movies</em> & More</PageTitle>
+            <PageDesc>Every title that has made me feel something. No debate.</PageDesc>
           </PageHeader>
 
           {apiError && (
@@ -282,13 +269,15 @@ export default function Drama({ onBack }) {
           {!loading && (
             <StatsStrip>
               {[
-                { n: counts.total,    l: 'Total',    e: '📋' },
-                { n: counts.watching, l: 'Watching', e: '▶️' },
-                { n: counts.finished, l: 'Finished', e: '✅' },
-                { n: counts.planned,  l: 'Planned',  e: '📌' },
-                { n: counts.drama,    l: 'Dramas',   e: '🎭' },
-                { n: counts.movie,    l: 'Movies',   e: '🎬' },
-                { n: counts.anime,    l: 'Anime',    e: '✨' },
+                { n: counts.total,     l: 'Total',     e: '📋' },
+                { n: counts.watching,  l: 'Watching',  e: '▶️' },
+                { n: counts.completed, l: 'Completed', e: '✅' },
+                { n: counts.planned,   l: 'Planned',   e: '📌' },
+                { n: counts.drama,     l: 'Dramas',    e: '🎭' },
+                { n: counts.movie,     l: 'Movies',    e: '🎬' },
+                { n: counts.anime,     l: 'Anime',     e: '✨' },
+                { n: counts.book,      l: 'Books',     e: '📚' },
+                { n: counts.manga,     l: 'Manga',     e: '🈺' },
               ].map((s, i) => (
                 <StatPill key={i}>
                   <span style={{ fontSize: '1rem' }}>{s.e}</span>
@@ -305,7 +294,7 @@ export default function Drama({ onBack }) {
               <input
                 value={search}
                 onChange={e => setSearch(e.target.value)}
-                placeholder="Search title, genre, note..."
+                placeholder="Search title, genre..."
               />
             </SearchBox>
             <FilterTabs>
@@ -315,11 +304,8 @@ export default function Drama({ onBack }) {
             </FilterTabs>
             <SortSelect value={sort} onChange={e => setSort(e.target.value)}>
               <option value="default">Sort: Default</option>
-              <option value="rating-desc">Rating: High → Low</option>
-              <option value="rating-asc">Rating: Low → High</option>
               <option value="title-az">Title: A → Z</option>
               <option value="title-za">Title: Z → A</option>
-              <option value="year-desc">Year: Newest</option>
             </SortSelect>
           </ControlsRow>
 
@@ -343,7 +329,6 @@ export default function Drama({ onBack }) {
               ) : visible.map(item => (
                 <Card key={item.id} $busy={savingId === item.id}>
                   <CardTopRow>
-                    <CardEmojiBox>{item.emoji}</CardEmojiBox>
                     <CardBadgeCol>
                       <TypeBadge $t={item.type}>{item.type}</TypeBadge>
                       <StatusBadge $s={item.status}>{item.status}</StatusBadge>
@@ -352,11 +337,7 @@ export default function Drama({ onBack }) {
                   <CardTitle>{item.title}</CardTitle>
                   <CardMeta>
                     <MetaChip>{item.genre}</MetaChip>
-                    {item.year     && <><MetaChip>·</MetaChip><MetaChip>{item.year}</MetaChip></>}
-                    {item.episodes && <><MetaChip>·</MetaChip><MetaChip>{item.episodes} ep</MetaChip></>}
-                    {item.rating   && <><MetaChip>·</MetaChip><MetaChip className="gold">★ {item.rating}/10</MetaChip></>}
                   </CardMeta>
-                  {item.note && <CardNote>"{item.note}"</CardNote>}
                   <CardActions>
                     <ActBtn
                       onClick={() => openEdit(item)}
@@ -413,76 +394,17 @@ export default function Drama({ onBack }) {
                   </FormGroup>
                 </FormFull>
 
-                <FormGroup>
-                  <FormLabel>Genre *</FormLabel>
-                  <FormSelect
-                    value={form.genre}
-                    onChange={e => setForm(p => ({ ...p, genre: e.target.value }))}
-                    style={{ borderColor: errors.genre ? C.red : '' }}
-                  >
-                    <option value="">Select genre</option>
-                    {GENRE_OPT.map(g => <option key={g} value={g}>{g}</option>)}
-                  </FormSelect>
-                </FormGroup>
-
-                <FormGroup>
-                  <FormLabel>Year</FormLabel>
-                  <FormInput
-                    value={form.year}
-                    onChange={e => setForm(p => ({ ...p, year: e.target.value }))}
-                    placeholder="e.g. 2023"
-                    type="number" min="1990" max="2030"
-                  />
-                </FormGroup>
-
-                <FormGroup>
-                  <FormLabel>Episodes</FormLabel>
-                  <FormInput
-                    value={form.episodes}
-                    onChange={e => setForm(p => ({ ...p, episodes: e.target.value }))}
-                    placeholder="e.g. 16"
-                    type="number" min="1"
-                  />
-                </FormGroup>
-
                 <FormFull>
                   <FormGroup>
-                    <FormLabel>Rating (1–10) *</FormLabel>
-                    <RatingRow>
-                      {[1,2,3,4,5,6,7,8,9,10].map(n => (
-                        <RatingStar
-                          key={n} type="button"
-                          $active={Number(form.rating) === n}
-                          onClick={() => setForm(p => ({ ...p, rating: String(n) }))}
-                        >{n}</RatingStar>
-                      ))}
-                    </RatingRow>
-                  </FormGroup>
-                </FormFull>
-
-                <FormFull>
-                  <FormGroup>
-                    <FormLabel>Emoji</FormLabel>
-                    <EmojiPicker>
-                      {EMOJI_OPT.map(em => (
-                        <EmojiOpt
-                          key={em} type="button"
-                          $active={form.emoji === em}
-                          onClick={() => setForm(p => ({ ...p, emoji: em }))}
-                        >{em}</EmojiOpt>
-                      ))}
-                    </EmojiPicker>
-                  </FormGroup>
-                </FormFull>
-
-                <FormFull>
-                  <FormGroup>
-                    <FormLabel>Personal Note</FormLabel>
-                    <FormTextarea
-                      value={form.note}
-                      onChange={e => setForm(p => ({ ...p, note: e.target.value }))}
-                      placeholder="What did this make you feel..."
-                    />
+                    <FormLabel>Genre *</FormLabel>
+                    <FormSelect
+                      value={form.genre}
+                      onChange={e => setForm(p => ({ ...p, genre: e.target.value }))}
+                      style={{ borderColor: errors.genre ? C.red : '' }}
+                    >
+                      <option value="">Select genre</option>
+                      {GENRE_OPT.map(g => <option key={g} value={g}>{g}</option>)}
+                    </FormSelect>
                   </FormGroup>
                 </FormFull>
               </FormGrid>
@@ -572,15 +494,13 @@ const BtnSpinner   = styled.span`display:inline-block;width:12px;height:12px;bor
 
 const Grid = styled.div`display:grid;grid-template-columns:repeat(auto-fill,minmax(288px,1fr));gap:1.4rem;`;
 const Card = styled.div`background:${C.white};border:1.5px solid ${C.border};border-radius:18px;padding:1.5rem;display:flex;flex-direction:column;gap:.6rem;transition:transform .22s ease,box-shadow .22s ease,border-color .22s ease,opacity .2s ease;position:relative;overflow:hidden;opacity:${p=>p.$busy?.5:1};&:hover{transform:translateY(-4px);box-shadow:0 14px 36px rgba(26,26,46,.09);border-color:${C.green};}`;
-const CardTopRow   = styled.div`display:flex;justify-content:space-between;align-items:flex-start;`;
-const CardEmojiBox = styled.div`width:48px;height:48px;border-radius:14px;background:${C.muted};border:1.5px solid ${C.border};display:flex;align-items:center;justify-content:center;font-size:1.5rem;flex-shrink:0;`;
+const CardTopRow   = styled.div`display:flex;justify-content:flex-end;align-items:flex-start;`;
 const CardBadgeCol = styled.div`display:flex;flex-direction:column;align-items:flex-end;gap:.35rem;`;
 const StatusBadge  = styled.span`font-family:'Syne',sans-serif;font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;background:${p=>STATUS_COLOR[p.$s]?.bg||C.muted};color:${p=>STATUS_COLOR[p.$s]?.color||C.soft};border:1.5px solid ${p=>STATUS_COLOR[p.$s]?.border||C.border};padding:.2rem .6rem;border-radius:100px;`;
 const TypeBadge    = styled.span`font-family:'Syne',sans-serif;font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;background:${p=>TYPE_COLOR[p.$t]?.bg||C.muted};color:${p=>TYPE_COLOR[p.$t]?.color||C.soft};border:1.5px solid ${p=>TYPE_COLOR[p.$t]?.border||C.border};padding:.2rem .6rem;border-radius:100px;`;
 const CardTitle    = styled.div`font-family:'Syne',sans-serif;font-size:1.05rem;font-weight:800;color:${C.dark};line-height:1.2;`;
 const CardMeta     = styled.div`display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;`;
 const MetaChip     = styled.span`font-size:.75rem;color:${C.soft};&.gold{color:${C.gold};font-weight:700;}`;
-const CardNote     = styled.p`font-size:.82rem;color:${C.soft};font-style:italic;line-height:1.5;border-top:1px solid ${C.muted};padding-top:.6rem;margin-top:.2rem;`;
 const CardActions  = styled.div`display:flex;gap:.5rem;margin-top:.4rem;`;
 const ActBtn = styled.button`flex:1;padding:.42rem .75rem;border-radius:100px;cursor:pointer;font-family:'Syne',sans-serif;font-size:.7rem;font-weight:700;letter-spacing:.5px;text-transform:uppercase;transition:all .18s ease;background:${p=>p.$danger?C.redLt:C.muted};color:${p=>p.$danger?C.red:C.dark};border:1.5px solid ${p=>p.$danger?'#f5b7b1':C.border};display:inline-flex;align-items:center;justify-content:center;gap:.35rem;&:hover:not(:disabled){background:${p=>p.$danger?C.red:C.dark};color:${C.bg};border-color:${p=>p.$danger?C.red:C.dark};}&:disabled{opacity:.45;cursor:not-allowed;}`;
 
@@ -599,11 +519,6 @@ const FormGroup  = styled.div`display:flex;flex-direction:column;gap:.4rem;`;
 const FormLabel  = styled.label`font-family:'Syne',sans-serif;font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:${C.soft};`;
 const FormInput  = styled.input`background:${C.bg};border:1.5px solid ${C.border};border-radius:10px;padding:.55rem .85rem;font-family:'DM Sans',sans-serif;font-size:.9rem;color:${C.dark};outline:none;transition:border-color .2s;&::placeholder{color:${C.border};}&:focus{border-color:${C.green};background:${C.white};}&.error{border-color:${C.red};animation:${shake} .35s ease;}`;
 const FormSelect = styled.select`background:${C.bg};border:1.5px solid ${C.border};border-radius:10px;padding:.55rem .85rem;font-family:'DM Sans',sans-serif;font-size:.9rem;color:${C.dark};outline:none;cursor:pointer;transition:border-color .2s;&:focus{border-color:${C.green};background:${C.white};}`;
-const FormTextarea=styled.textarea`background:${C.bg};border:1.5px solid ${C.border};border-radius:10px;padding:.55rem .85rem;font-family:'DM Sans',sans-serif;font-size:.9rem;color:${C.dark};outline:none;resize:vertical;min-height:80px;transition:border-color .2s;&::placeholder{color:${C.border};}&:focus{border-color:${C.green};background:${C.white};}`;
-const EmojiPicker= styled.div`display:flex;flex-wrap:wrap;gap:.4rem;margin-top:.25rem;`;
-const EmojiOpt   = styled.button`width:36px;height:36px;border-radius:8px;font-size:1.1rem;border:1.5px solid ${p=>p.$active?C.dark:C.border};background:${p=>p.$active?C.muted:C.bg};cursor:pointer;transition:all .15s ease;display:flex;align-items:center;justify-content:center;&:hover{border-color:${C.dark};background:${C.muted};}`;
-const RatingRow  = styled.div`display:flex;gap:.4rem;align-items:center;flex-wrap:wrap;`;
-const RatingStar = styled.button`width:32px;height:32px;border-radius:8px;border:1.5px solid ${p=>p.$active?C.gold:'#e8e3d0'};background:${p=>p.$active?C.goldLt:C.bg};color:${p=>p.$active?C.gold:'#c8c3b8'};cursor:pointer;transition:all .15s ease;font-weight:700;font-family:'Syne',sans-serif;font-size:.78rem;&:hover{border-color:${C.gold};background:${C.goldLt};color:${C.gold};}`;
 const ModalBtns  = styled.div`display:flex;gap:.75rem;margin-top:1.5rem;`;
 const SaveBtn    = styled.button`flex:1;padding:.75rem 1rem;background:${C.dark};color:${C.bg};border:2px solid ${C.dark};border-radius:100px;font-family:'Syne',sans-serif;font-size:.85rem;font-weight:700;cursor:pointer;transition:all .2s ease;letter-spacing:.3px;display:inline-flex;align-items:center;justify-content:center;gap:.5rem;&:hover:not(:disabled){background:${C.green};border-color:${C.green};transform:translateY(-2px);box-shadow:0 6px 16px rgba(45,106,79,.25);}&:active:not(:disabled){transform:translateY(0);}&:disabled{opacity:.5;cursor:not-allowed;}`;
 const CancelBtn  = styled.button`flex:1;padding:.75rem 1rem;background:transparent;color:${C.soft};border:1.5px solid ${C.border};border-radius:100px;font-family:'Syne',sans-serif;font-size:.85rem;font-weight:700;cursor:pointer;transition:all .2s ease;&:hover{border-color:${C.dark};color:${C.dark};transform:translateY(-2px);}&:active{transform:translateY(0);}`;
