@@ -11,18 +11,15 @@ const GlobalStyle = createGlobalStyle`
     --bg-input: rgba(255,255,255,0.03);
     --border: rgba(255,255,255,0.07);
     --border-active: rgba(20,184,166,0.5);
-
     --text-primary: #EDF2F7;
     --text-secondary: #64748B;
     --text-muted: #334155;
-
     --teal: #14B8A6;
     --teal-dim: rgba(20,184,166,0.12);
     --teal-glow: rgba(20,184,166,0.25);
     --amber: #F59E0B;
     --red: #EF4444;
     --green: #10B981;
-
     --radius: 8px;
     --ease: cubic-bezier(0.23,1,0.32,1);
     --font-mono: 'Space Mono', monospace;
@@ -43,7 +40,6 @@ const GlobalStyle = createGlobalStyle`
   input, textarea, select { font-family: var(--font-mono); }
 `;
 
-
 const fadeUp = keyframes`
   from { opacity: 0; transform: translateY(24px); }
   to   { opacity: 1; transform: translateY(0); }
@@ -53,7 +49,6 @@ const scanline = keyframes`
   0%   { transform: translateY(-100%); }
   100% { transform: translateY(100vh); }
 `;
-
 
 const pulseRing = keyframes`
   0%   { box-shadow: 0 0 0 0 var(--teal-glow); }
@@ -70,12 +65,10 @@ const glitch = keyframes`
   100%{ clip-path: inset(58% 0 43% 0); transform: translate(0); }
 `;
 
-
-const BASE_URL = `${API_BASE}/api`;  
-
+const BASE_URL = `${API_BASE}/api`;
 
 const AboutMe = () => {
-  const [mode, setMode] = useState('idle'); 
+  const [mode, setMode] = useState('idle');
   const [existingRecord, setExistingRecord] = useState(null);
   const [errorMsg, setErrorMsg] = useState('');
   const [isEditing, setIsEditing] = useState(false);
@@ -91,41 +84,39 @@ const AboutMe = () => {
   });
 
   useEffect(() => {
-      const fetchRecord = async () => {
-    setMode('loading');
-    try {
-      const res = await fetch(`${BASE_URL}/aboutme`,{next: { revalidate: 60 } });
-      if (res.ok) {
-        const data = await res.json();
-        const records = Array.isArray(data) ? data : data.results || [];
-        if (records.length > 0) {
-          const record = records[0];
-          setExistingRecord(record);
-          setFormData({
-            name:           record.name          || '',
-            address:        record.address        || '',
-            phone:          record.phone          || '',
-            email:          record.email          || '',
-            baseSecretCode: '',   
-            sidebarCode:    record.sidebarCode    || '',
-            portalDream:    record.portalDream    || '',
-          });
-          setMode('loaded');
+    const fetchRecord = async () => {
+      setMode('loading');
+      try {
+        const res = await fetch(`${BASE_URL}/aboutme`, { next: { revalidate: 60 } });
+        if (res.ok) {
+          const data = await res.json();
+          const records = Array.isArray(data) ? data : data.results || [];
+          if (records.length > 0) {
+            const record = records[0];
+            setExistingRecord(record);
+            setFormData({
+              name:           record.name       || '',
+              address:        record.address    || '',
+              phone:          record.phone      || '',
+              email:          record.email      || '',
+              baseSecretCode: '',
+              sidebarCode:    record.sidebarCode || '',
+              portalDream:    record.portalDream || '',
+            });
+            setMode('loaded');
+          } else {
+            setMode('creating');
+          }
         } else {
           setMode('creating');
         }
-      } else {
+      } catch (err) {
+        console.error('Fetch error:', err);
         setMode('creating');
       }
-    } catch (err) {
-      console.error('Fetch error:', err);
-      setMode('creating');
-    }
-  };
+    };
     fetchRecord();
   }, []);
-
-
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -141,12 +132,13 @@ const AboutMe = () => {
     setMode('submitting');
     setErrorMsg('');
     try {
-      const payload = { ...formData, clearanceLevel: 'ALPHA-9' };
+      // ✅ removed clearanceLevel from payload
+      const payload = { ...formData };
       const res = await fetch(`${BASE_URL}/aboutme`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
-        next: { revalidate: 60 } 
+        next: { revalidate: 60 }
       });
       if (res.ok) {
         const created = await res.json();
@@ -161,7 +153,7 @@ const AboutMe = () => {
         setMode('creating');
       }
     } catch (err) {
-      console.log(err)
+      console.log(err);
       setErrorMsg('Critical network failure. Packet loss detected.');
       setMode('creating');
     }
@@ -173,14 +165,14 @@ const AboutMe = () => {
     setMode('submitting');
     setErrorMsg('');
     try {
+      // ✅ removed clearanceLevel from payload
       const payload = {
-        name:         formData.name,
-        address:      formData.address,
-        phone:        formData.phone,
-        email:        formData.email,
-        sidebarCode:  formData.sidebarCode,
-        portalDream:  formData.portalDream,
-        clearanceLevel: 'ALPHA-9',
+        name:        formData.name,
+        address:     formData.address,
+        phone:       formData.phone,
+        email:       formData.email,
+        sidebarCode: formData.sidebarCode,
+        portalDream: formData.portalDream,
       };
       if (formData.baseSecretCode) {
         payload.baseSecretCode = formData.baseSecretCode;
@@ -189,7 +181,7 @@ const AboutMe = () => {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
-        next: { revalidate: 60 } 
+        next: { revalidate: 60 }
       });
       if (res.ok) {
         const updated = await res.json();
@@ -204,7 +196,7 @@ const AboutMe = () => {
         setMode('loaded');
       }
     } catch (err) {
-      console.log(err)
+      console.log(err);
       setErrorMsg('Critical network failure. Packet loss detected.');
       setMode('loaded');
     }
@@ -215,7 +207,7 @@ const AboutMe = () => {
     if (!window.confirm('CONFIRM DELETION: This will permanently erase the operative profile from the archive.')) return;
     setMode('loading');
     try {
-      const res = await fetch(`${BASE_URL}/aboutme/${existingRecord.id}/`, { method: 'DELETE',next: { revalidate: 60 }  });
+      const res = await fetch(`${BASE_URL}/aboutme/${existingRecord.id}/`, { method: 'DELETE', next: { revalidate: 60 } });
       if (res.ok || res.status === 204) {
         setExistingRecord(null);
         setFormData({ name: '', address: '', phone: '', email: '', baseSecretCode: '', sidebarCode: '', portalDream: '' });
@@ -225,7 +217,7 @@ const AboutMe = () => {
         setMode('loaded');
       }
     } catch (err) {
-      console.log(err)
+      console.log(err);
       setErrorMsg('Network failure during deletion.');
       setMode('loaded');
     }
@@ -240,7 +232,6 @@ const AboutMe = () => {
       <GlobalStyle />
       <ScanlineOverlay />
       <Page>
-
         <Header>
           <HeaderEyebrow>
             <Dot active />
@@ -283,46 +274,18 @@ const AboutMe = () => {
               <SectionLabel>01 — STANDARD PROTOCOL DETAILS</SectionLabel>
               <Grid2>
                 <Field label="OPERATIVE NAME / CODENAME" required>
-                  <Input
-                    name="name"
-                    placeholder="Alex 'Wraith' Johnson"
-                    value={formData.name}
-                    onChange={handleChange}
-                    required
-                    disabled={isSubmitting}
-                  />
+                  <Input name="name" placeholder="Alex 'Wraith' Johnson" value={formData.name} onChange={handleChange} required disabled={isSubmitting} />
                 </Field>
                 <Field label="SECURE EMAIL PROTOCOL" required>
-                  <Input
-                    type="email"
-                    name="email"
-                    placeholder="operative@chronos.net"
-                    value={formData.email}
-                    onChange={handleChange}
-                    required
-                    disabled={isSubmitting}
-                  />
+                  <Input type="email" name="email" placeholder="operative@chronos.net" value={formData.email} onChange={handleChange} required disabled={isSubmitting} />
                 </Field>
               </Grid2>
               <Grid2>
                 <Field label="ENCRYPTED COMM LINE (PHONE)">
-                  <Input
-                    type="tel"
-                    name="phone"
-                    placeholder="+1 (555) 000-0000"
-                    value={formData.phone}
-                    onChange={handleChange}
-                    disabled={isSubmitting}
-                  />
+                  <Input type="tel" name="phone" placeholder="+1 (555) 000-0000" value={formData.phone} onChange={handleChange} disabled={isSubmitting} />
                 </Field>
                 <Field label="BASE LOCATION / PHYSICAL ADDRESS">
-                  <Input
-                    name="address"
-                    placeholder="Sector 9 — Classified"
-                    value={formData.address}
-                    onChange={handleChange}
-                    disabled={isSubmitting}
-                  />
+                  <Input name="address" placeholder="Sector 9 — Classified" value={formData.address} onChange={handleChange} disabled={isSubmitting} />
                 </Field>
               </Grid2>
             </Section>
@@ -333,42 +296,14 @@ const AboutMe = () => {
               <SectionLabel accent>02 — CLEARANCE & VISION MATRIX</SectionLabel>
               <Grid2>
                 <Field label="BASE SECRET CODE (required: 8888)" required accent>
-                  <Input
-                    type="password"
-                    name="baseSecretCode"
-                    placeholder={existingRecord ? '•••• (leave blank to keep)' : '8888'}
-                    value={formData.baseSecretCode}
-                    onChange={handleChange}
-                    inputMode="numeric"
-                    maxLength={4}
-                    pattern="[0-9]*"
-                    required={!existingRecord}
-                    disabled={isSubmitting}
-                    accent
-                  />
+                  <Input type="password" name="baseSecretCode" placeholder={existingRecord ? '•••• (leave blank to keep)' : '8888'} value={formData.baseSecretCode} onChange={handleChange} inputMode="numeric" maxLength={4} pattern="[0-9]*" required={!existingRecord} disabled={isSubmitting} accent />
                 </Field>
                 <Field label="SIDEBAR SEQUENTIAL CODE" accent>
-                  <Input
-                    name="sidebarCode"
-                    placeholder="Up-Up-Down-Down-Left-Right..."
-                    value={formData.sidebarCode}
-                    onChange={handleChange}
-                    disabled={isSubmitting}
-                    accent
-                  />
+                  <Input name="sidebarCode" placeholder="Up-Up-Down-Down-Left-Right..." value={formData.sidebarCode} onChange={handleChange} disabled={isSubmitting} accent />
                 </Field>
               </Grid2>
               <Field label="DREAM / VISION FOR SECRET PORTAL" required accent>
-                <Textarea
-                  name="portalDream"
-                  placeholder="Describe your vision to bypass dimensional barriers..."
-                  value={formData.portalDream}
-                  onChange={handleChange}
-                  rows={5}
-                  required
-                  disabled={isSubmitting}
-                  accent
-                />
+                <Textarea name="portalDream" placeholder="Describe your vision to bypass dimensional barriers..." value={formData.portalDream} onChange={handleChange} rows={5} required disabled={isSubmitting} accent />
               </Field>
             </Section>
 
@@ -376,27 +311,23 @@ const AboutMe = () => {
               <SubmitBtn type="submit" disabled={isSubmitting}>
                 {isSubmitting
                   ? <><Spinner /> SYNCHRONIZING...</>
-                  : existingRecord
-                    ? '▶ PATCH RECORD'
-                    : '▶ SYNC PERSONNEL DATA'
+                  : existingRecord ? '▶ PATCH RECORD' : '▶ SYNC PERSONNEL DATA'
                 }
               </SubmitBtn>
             </ActionRow>
           </TerminalForm>
         )}
-
       </Page>
     </>
   );
 };
 
+// ✅ removed CardBadge with clearanceLevel
 const RecordCard = ({ record, onEdit, onDelete }) => (
   <CardWrap>
     <CardHeader>
       <CardTitle>OPERATIVE PROFILE // ACTIVE RECORD</CardTitle>
-      <CardBadge>{record.clearanceLevel || 'ALPHA-9'}</CardBadge>
     </CardHeader>
-
     <CardGrid>
       <DataField label="OPERATIVE NAME">{record.name}</DataField>
       <DataField label="EMAIL PROTOCOL">{record.email}</DataField>
@@ -407,11 +338,9 @@ const RecordCard = ({ record, onEdit, onDelete }) => (
         {record.timestamp ? new Date(record.timestamp).toLocaleString() : '—'}
       </DataField>
     </CardGrid>
-
     <DataField label="PORTAL VISION" full>
       <PortalText>{record.portalDream}</PortalText>
     </DataField>
-
     <CardActions>
       <EditBtn onClick={onEdit}>[ EDIT RECORD ]</EditBtn>
       <DeleteBtn onClick={onDelete}>[ DELETE ]</DeleteBtn>
@@ -419,12 +348,9 @@ const RecordCard = ({ record, onEdit, onDelete }) => (
   </CardWrap>
 );
 
-
 const Field = ({ label, children, required, accent, full }) => (
   <FieldWrap full={full}>
-    <FieldLabel accent={accent}>
-      {label}{required && <Req> *</Req>}
-    </FieldLabel>
+    <FieldLabel accent={accent}>{label}{required && <Req> *</Req>}</FieldLabel>
     {children}
   </FieldWrap>
 );
@@ -435,8 +361,6 @@ const DataField = ({ label, children, full }) => (
     <DataValue>{children}</DataValue>
   </DataFieldWrap>
 );
-
-
 
 const ScanlineOverlay = styled.div`
   pointer-events: none;
@@ -461,9 +385,7 @@ const Page = styled.main`
   animation: ${fadeUp} 0.6s var(--ease) both;
 `;
 
-const Header = styled.header`
-  margin-bottom: 5rem;
-`;
+const Header = styled.header`margin-bottom: 5rem;`;
 
 const HeaderEyebrow = styled.div`
   display: flex;
@@ -522,21 +444,9 @@ const StatusBanner = styled.div`
   margin-bottom: 2rem;
   border: 1px solid;
   animation: ${fadeUp} 0.4s var(--ease) both;
-  ${p => p.variant === 'info' && css`
-    background: rgba(20,184,166,0.05);
-    border-color: rgba(20,184,166,0.2);
-    color: var(--teal);
-  `}
-  ${p => p.variant === 'success' && css`
-    background: rgba(16,185,129,0.05);
-    border-color: rgba(16,185,129,0.3);
-    color: var(--green);
-  `}
-  ${p => p.variant === 'error' && css`
-    background: rgba(239,68,68,0.05);
-    border-color: rgba(239,68,68,0.3);
-    color: var(--red);
-  `}
+  ${p => p.variant === 'info' && css`background: rgba(20,184,166,0.05); border-color: rgba(20,184,166,0.2); color: var(--teal);`}
+  ${p => p.variant === 'success' && css`background: rgba(16,185,129,0.05); border-color: rgba(16,185,129,0.3); color: var(--green);`}
+  ${p => p.variant === 'error' && css`background: rgba(239,68,68,0.05); border-color: rgba(239,68,68,0.3); color: var(--red);`}
 `;
 
 const CardWrap = styled.div`
@@ -547,7 +457,6 @@ const CardWrap = styled.div`
   animation: ${fadeUp} 0.5s var(--ease) both;
   position: relative;
   overflow: hidden;
-
   &::before {
     content: '';
     position: absolute;
@@ -571,16 +480,6 @@ const CardTitle = styled.h2`
   font-size: 1rem;
   color: var(--text-secondary);
   letter-spacing: 2px;
-`;
-
-const CardBadge = styled.span`
-  font-size: 0.65rem;
-  letter-spacing: 3px;
-  padding: 0.3rem 0.8rem;
-  border: 1px solid var(--teal-dim);
-  color: var(--teal);
-  border-radius: 50px;
-  background: var(--teal-dim);
 `;
 
 const CardGrid = styled.div`
@@ -666,7 +565,6 @@ const TerminalForm = styled.form`
   animation: ${fadeUp} 0.5s var(--ease) both;
   position: relative;
   overflow: hidden;
-
   &::before {
     content: '';
     position: absolute;
@@ -740,9 +638,7 @@ const FieldLabel = styled.label`
   color: ${p => p.accent ? 'var(--teal)' : 'var(--text-secondary)'};
 `;
 
-const Req = styled.span`
-  color: var(--red);
-`;
+const Req = styled.span`color: var(--red);`;
 
 const inputBase = css`
   width: 100%;
@@ -754,13 +650,11 @@ const inputBase = css`
   background: var(--bg-input);
   color: var(--text-primary);
   transition: border-color 0.2s var(--ease), box-shadow 0.2s var(--ease);
-
   &:focus {
     outline: none;
     border-color: var(--teal);
     box-shadow: 0 0 0 3px var(--teal-dim);
   }
-
   &:disabled { opacity: 0.4; cursor: not-allowed; }
 `;
 
@@ -797,19 +691,9 @@ const SubmitBtn = styled.button`
   gap: 0.75rem;
   transition: all 0.25s var(--ease);
   box-shadow: 0 4px 20px rgba(20,184,166,0.2);
-
-  &:hover:not(:disabled) {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 28px rgba(20,184,166,0.35);
-  }
+  &:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 8px 28px rgba(20,184,166,0.35); }
   &:active:not(:disabled) { transform: translateY(0); }
-  &:disabled {
-    background: var(--bg-input);
-    color: var(--text-muted);
-    border: 1px solid var(--border);
-    box-shadow: none;
-    cursor: wait;
-  }
+  &:disabled { background: var(--bg-input); color: var(--text-muted); border: 1px solid var(--border); box-shadow: none; cursor: wait; }
 `;
 
 const spinAnim = keyframes`

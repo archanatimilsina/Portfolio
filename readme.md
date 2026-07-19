@@ -6,4 +6,4 @@
 -HTMl, CSS, javascript
 
 **Visit the site**
-https://archanatimilsina.github.io/Portfolio/
+https://archana-timilsina.com.np/
