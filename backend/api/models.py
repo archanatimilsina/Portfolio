@@ -101,8 +101,6 @@ class Project(models.Model):
         return self.name
     
 
-
-
 class AboutMe(models.Model):
     name = models.CharField(
         max_length=255, 
@@ -119,7 +117,6 @@ class AboutMe(models.Model):
         blank=True, 
         null=True, 
     )
-
     base_secret_code = models.CharField(
         max_length=4, 
     )
@@ -130,11 +127,6 @@ class AboutMe(models.Model):
     )
     portal_dream = models.TextField(
     )
-
-    clearance_level = models.CharField(
-        max_length=50, 
-        default="ALPHA-9",
-    )
     created_at = models.DateTimeField(
         auto_now_add=True, 
     )
@@ -143,7 +135,7 @@ class AboutMe(models.Model):
         ordering = ['-created_at']
 
     def __str__(self):
-        return f"{self.name} ({self.clearance_level})"
+        return f"{self.name}"
     
 class DayLog(models.Model):
     MOOD_CHOICES = [
@@ -269,7 +261,6 @@ class OperativeNote(models.Model):
     
 
 
-from django.db import models
 
 class DreamWish(models.Model):
     emoji = models.CharField(
@@ -343,8 +334,6 @@ class WatchlistItem(models.Model):
     def __str__(self):
         return f"{self.title} ({self.type})"
 
-
-from django.db import models
 
 
 class OperativeGoal(models.Model):

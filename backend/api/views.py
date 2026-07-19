@@ -35,7 +35,6 @@ class AboutMeListCreateView(generics.ListCreateAPIView):
 class AboutMeRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
     queryset = AboutMe.objects.all()
     serializer_class = AboutMeSerializer
-
 class DayLogListCreateView(generics.ListCreateAPIView):
     queryset = DayLog.objects.all()
     serializer_class = DayLogSerializer

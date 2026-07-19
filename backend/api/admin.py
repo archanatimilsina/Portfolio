@@ -20,9 +20,8 @@ class ProjectAdmin(admin.ModelAdmin):
 
 @admin.register(AboutMe)
 class AboutMeAdmin(admin.ModelAdmin):
-    list_display = ('name', 'email', 'phone', 'base_secret_code', 'clearance_level', 'created_at')
+    list_display = ('name', 'email', 'phone', 'base_secret_code', 'created_at')
     search_fields = ('name', 'email')
-
 @admin.register(DayLog)
 class DayLogAdmin(admin.ModelAdmin):
     list_display = ('date', 'title', 'mood', 'source', 'created_at')

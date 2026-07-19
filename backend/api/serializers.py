@@ -36,18 +36,15 @@ class AboutMeSerializer(serializers.ModelSerializer):
     baseSecretCode = serializers.CharField(source='base_secret_code')
     sidebarCode = serializers.CharField(source='sidebar_code', required=False, allow_blank=True)
     portalDream = serializers.CharField(source='portal_dream')
-    clearanceLevel = serializers.CharField(source='clearance_level', required=False)
     timestamp = serializers.DateTimeField(source='created_at', read_only=True)
 
     class Meta:
         model = AboutMe
         fields = [
-            'id', 'name', 'address', 'phone', 'email', 
+            'id', 'name', 'address', 'phone', 'email',
             'baseSecretCode', 'sidebarCode', 'portalDream',
-            'clearanceLevel', 'timestamp'
+            'timestamp'
         ]
-    
-
 class DayLogSerializer(serializers.ModelSerializer):
     url = serializers.SerializerMethodField()
     file = serializers.ImageField(source='image_file', write_only=True, required=False, allow_null=True)
