@@ -132,7 +132,6 @@ const AboutMe = () => {
     setMode('submitting');
     setErrorMsg('');
     try {
-      // ✅ removed clearanceLevel from payload
       const payload = { ...formData };
       const res = await fetch(`${BASE_URL}/aboutme`, {
         method: 'POST',
