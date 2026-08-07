@@ -440,8 +440,8 @@ function MemoryCard({ stamp, onEdit, onDelete, deleting }) {
       <article className="arc-polaroid">
         <div className={`arc-tape ${tapePos}`} />
         <div className="arc-img-box">
-          {stamp.image_url ? (
-            <img src={stamp.image_url} alt={stamp.title} loading="lazy" />
+          {stamp.image ? (
+            <img src={stamp.image} alt={stamp.title} loading="lazy" />
           ) : (
            
             <div style={{
@@ -539,7 +539,7 @@ export default function PersonalArchivePage() {
       remoteUrl:  stamp.remote_url || '',
       source:     stamp.source     || 'remote',
       file:       null,
-      previewUrl: stamp.image_url  || '',
+      previewUrl: stamp.image  || '',
     });
     setFormErr(null);
     setModal(true);

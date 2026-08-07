@@ -35,6 +35,7 @@ class AboutMeListCreateView(generics.ListCreateAPIView):
 class AboutMeRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
     queryset = AboutMe.objects.all()
     serializer_class = AboutMeSerializer
+
 class DayLogListCreateView(generics.ListCreateAPIView):
     queryset = DayLog.objects.all()
     serializer_class = DayLogSerializer
@@ -57,7 +58,6 @@ class ScrapbookStampDetailAPIView(generics.RetrieveUpdateDestroyAPIView):
     parser_classes = [MultiPartParser, FormParser, JSONParser]
 
 class NoteListCreateAPIView(generics.ListCreateAPIView):
-
     queryset = OperativeNote.objects.all()
     serializer_class = OperativeNoteSerializer
 
