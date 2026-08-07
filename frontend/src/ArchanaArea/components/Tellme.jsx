@@ -58,7 +58,7 @@ const spinOnce = keyframes`
 
 const API = {
   list:   `${API_BASE}/api/daylogs/`,
-  detail: (id) => `${API_BASE}//api/daylogs/${id}/`,
+  detail: (id) => `${API_BASE}/api/daylogs/${id}/`,
 };
 
 const MOODS = ['Happy', 'Okay', 'Neutral', 'Sad', 'Wired', 'Tired'];

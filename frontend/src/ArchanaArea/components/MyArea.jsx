@@ -114,19 +114,19 @@ const GlobalStyle = createGlobalStyle`
 `;
 
 const SECTIONS = [
-  { id:"gallery",          icon:"🖼",  label:"Gallery",         group:"explore" },
-  { id:"dramalist",        icon:"🎬",  label:"Drama List",      group:"explore" },
-  { id:"hobbies",          icon:"🌿",  label:"Hobbies",         group:"explore" },
-  { id:"goals",            icon:"🎯",  label:"Goals",           group:"life"    },
-  { id:"notes",            icon:"📝",  label:"Notes",           group:"life"    },
-  { id:"wishlist",         icon:"✨",  label:"Wish List",       group:"life"    },
-  { id:"tellme",           icon:"🗣️",  label:"My day",          group:"life"    },
-  { id:"todo",             icon:"🏋️",  label:"To do",           group:"life"    },
-  { id:"aboutme",          icon:"🥰",  label:"about me",        group:"life"    },
-  { id:"project",          icon:"👩‍💻",  label:"Project",         group:"life"    },
-  { id:"professionalDev",  icon:"💆‍♀️",  label:"professionalDev", group:"life"    },
-  { id:"music",            icon:"🎧",  label:"music",           group:"life"    },
-  { id:"gestureDraw",      icon:"🎨",  label:"GestureDraw",     group:"life"    },
+  { id:"gallery",          icon:"🐸",  label:"GalBoard",         group:"explore" },
+  { id:"dramalist",        icon:"🍀",  label:"Pearl Collection",      group:"explore" },
+  { id:"hobbies",          icon:"🐙",  label:"Hobi",         group:"explore" },
+  { id:"goals",            icon:"🐞",  label:"planni",           group:"life"    },
+  { id:"notes",            icon:"🎨",  label:"Noti",           group:"life"    },
+  { id:"wishlist",         icon:"🐳",  label:"Clover",       group:"life"    },
+  { id:"tellme",           icon:"🐣",  label:"miday",          group:"life"    },
+  { id:"todo",             icon:"☃️",  label:"action",           group:"life"    },
+  { id:"aboutme",          icon:"🐉",  label:"meupdate",        group:"life"    },
+  { id:"project",          icon:"🦏",  label:"poroject",         group:"life"    },
+  { id:"professionalDev",  icon:"🦜",  label:"cilas", group:"life"    },
+  { id:"music",            icon:"🐋",  label:"msc",           group:"life"    },
+  { id:"gestureDraw",      icon:"🦒",  label:"strokey",     group:"life"    },
 ];
 
 

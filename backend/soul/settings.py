@@ -32,7 +32,7 @@ MEDIA_URL = '/media/'
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-%iqt3zz$7vqaa&ih!*gjqw5#pg!!ezkd!fve(y*hvuo^(u*4ju'
+SECRET_KEY = os.environ.get('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -51,7 +51,6 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",
     "http://localhost:3000",
 ]
-# Application definition
 
 INSTALLED_APPS = [
     'django.contrib.admin',

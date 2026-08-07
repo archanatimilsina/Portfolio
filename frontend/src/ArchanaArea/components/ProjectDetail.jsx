@@ -56,6 +56,7 @@ const BLANK = {
   tech_stack: {},
   features: [],
   github_link: '',
+  live_url: '',
 };
 
 
@@ -110,6 +111,7 @@ export default function ProjectsPage({ onBack }) {
       tech_stack:   project.tech_stack   || {},
       features:     project.features     || [],
       github_link:  project.github_link  || '',
+      live_url:     project.live_url     || '',
     });
     setFeatureInput('');
     setFormError('');
@@ -329,6 +331,16 @@ export default function ProjectsPage({ onBack }) {
                 </FormGroup>
 
                 <FormGroup>
+                  <Label>Live URL</Label>
+                  <Input
+                    type="url"
+                    placeholder="https://your-project.vercel.app"
+                    value={form.live_url}
+                    onChange={e => handleField('live_url', e.target.value)}
+                  />
+                </FormGroup>
+
+                <FormGroup>
                   <Label>Features</Label>
                   <TagInputRow>
                     <Input
@@ -414,13 +426,21 @@ function ProjectCard({ project, index, isDeleting, onEdit, onDelete }) {
       )}
 
       <CardFooter>
-        {project.github_link ? (
-          <GithubLink href={project.github_link} target="_blank" rel="noopener noreferrer">
-            ↗ GitHub
-          </GithubLink>
-        ) : (
-          <GithubLink as="span" $muted>No repo linked</GithubLink>
-        )}
+        <FooterLinks>
+          {project.github_link && (
+            <GithubLink href={project.github_link} target="_blank" rel="noopener noreferrer">
+              ↗ GitHub
+            </GithubLink>
+          )}
+          {project.live_url && (
+            <GithubLink href={project.live_url} target="_blank" rel="noopener noreferrer">
+              ↗ Live
+            </GithubLink>
+          )}
+          {!project.github_link && !project.live_url && (
+            <GithubLink as="span" $muted>No links added</GithubLink>
+          )}
+        </FooterLinks>
         <CardDate>
           {project.created_at
             ? new Date(project.created_at).toLocaleDateString(undefined, { month:'short', year:'numeric' })
@@ -582,6 +602,7 @@ const CardFooter = styled.div`
   display:flex;justify-content:space-between;align-items:center;
   padding-top:.75rem;border-top:1px solid var(--border);margin-top:auto;
 `;
+const FooterLinks = styled.div`display:flex;align-items:center;gap:.9rem;`;
 const GithubLink = styled.a`
   font-family:'Syne',sans-serif;font-size:.72rem;font-weight:700;
   color:${p => p.$muted ? 'var(--text-secondary)' : 'var(--accent)'};
