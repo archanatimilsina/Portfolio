@@ -1,7 +1,6 @@
 import mimetypes
 import uuid
 import os
-
 from django.conf import settings
 from django.core.files.storage import Storage
 from supabase import create_client, Client

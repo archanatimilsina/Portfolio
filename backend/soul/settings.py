@@ -15,7 +15,7 @@ STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 STORAGES = {
     "default": {
-        "BACKEND": "core.supabase_storage.SupabaseStorage",
+        "BACKEND": "soul.supabase_storage.SupabaseStorage",
     },
     "staticfiles": {
         "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
