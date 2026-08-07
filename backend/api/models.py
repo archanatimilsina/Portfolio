@@ -299,27 +299,25 @@ class WatchlistItem(models.Model):
         ('Plan to Watch', 'Plan to Watch'),
         ('On Hold', 'On Hold'),
         ('Dropped', 'Dropped'),
+        ('Faded', 'faded'),
     ]
 
     GENRE_CHOICES = [
+        ('BL', 'BL'),
+        ('Bromance', 'bromance'),
+        ('Detective', 'detective'),
+        ('Historical', 'historical'),
         ('Thriller', 'Thriller'),
         ('Romance', 'Romance'),
         ('Action', 'Action'),
         ('Drama', 'Drama'),
         ('Fantasy', 'Fantasy'),
-        ('BL', 'BL'),
         ('Horror', 'Horror'),
-        ('Historical', 'Historical'),
-        ('Crime/Dark Comedy', 'Crime/Dark Comedy'),
-        ('Romance/Fantasy', 'Romance/Fantasy'),
-        ('Horror/Action', 'Horror/Action'),
-        ('Action/Superhero', 'Action/Superhero'),
-        ('Action/Dark', 'Action/Dark'),
-        ('Romance/Music', 'Romance/Music'),
-        ('Drama/Fantasy', 'Drama/Fantasy'),
-        ('Adventure/Fantasy', 'Adventure/Fantasy'),
         ('Sci-Fi', 'Sci-Fi'),
         ('Comedy', 'Comedy'),
+        ('Crime', 'crime'),
+        ('Adventure', 'adventure'),
+        ('Sad', 'sad'),
     ]
 
     type = models.CharField(max_length=10, choices=TYPE_CHOICES, default='drama')
