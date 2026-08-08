@@ -208,14 +208,11 @@ class ScrapbookStamp(models.Model):
     ]
 
     title = models.CharField(max_length=255, verbose_name="Memory Label")
-    
     image = models.ImageField(
         upload_to=scrapbook_upload_path, 
     )
-    
     remote_url = models.URLField(max_length=1000, blank=True, null=True)
     source = models.CharField(max_length=10, choices=SOURCE_CHOICES, default='local')
-    
     timestamp = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -225,16 +222,10 @@ class ScrapbookStamp(models.Model):
         return self.title
 
 
-
-
 @receiver(post_delete, sender=ScrapbookStamp)
 def auto_delete_file_on_delete(sender, instance, **kwargs):
     if instance.image:
-        if os.path.isfile(instance.image.path):
-            os.remove(instance.image.path)
-
-
-
+        instance.image.delete(save=False)
 
 
 class OperativeNote(models.Model):
