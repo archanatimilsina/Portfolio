@@ -5,7 +5,11 @@ from django.core.validators import RegexValidator
 from django.db.models.signals import post_delete
 from django.dispatch import receiver
 from django.utils.translation import gettext_lazy as _
-from django.core.validators import MinValueValidator, MaxValueValidator
+from datetime import timedelta
+from django.conf import settings
+from django.core.exceptions import ValidationError
+from django.db import models
+from django.utils import timezone
 
 class ProfessionalDevelopment(models.Model):
     DEVELOPMENT_TYPES = [
@@ -472,3 +476,94 @@ class Task(models.Model):
     def __str__(self):
         status = "✓" if self.completed else "○"
         return f"[{status}] {self.text[:60]} ({self.due_date})"
+
+
+class Challenge(models.Model):
+    class ChallengeType(models.TextChoices):
+        DAYS = 'days', 'Days'
+        INSTANT = 'instant', 'Instant'
+    class InstantStatus(models.TextChoices):
+        COMPLETED = 'completed', 'Completed'
+        NOT_COMPLETED = 'not_completed', 'Not completed'
+        PENDING = 'pending', 'Pending'
+    title = models.CharField(max_length=200)
+    type = models.CharField(max_length=10, choices=ChallengeType.choices)
+    start_date = models.DateField()
+    duration_days = models.PositiveIntegerField()
+    end_date = models.DateField()
+    instant_status = models.CharField(
+        max_length=20,
+        choices=InstantStatus.choices,
+        default=InstantStatus.PENDING,
+        blank=True,
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    class Meta:
+        ordering = ['-created_at']
+    def __str__(self):
+        return f'{self.title} ({self.get_type_display()})'
+    def clean(self):
+        if self.type == self.ChallengeType.DAYS and (not self.duration_days or self.duration_days < 1):
+            raise ValidationError({'duration_days': 'Must be at least 1 day for a days challenge.'})
+        if self.type == self.ChallengeType.INSTANT and self.end_date and self.end_date < self.start_date:
+            raise ValidationError({'end_date': 'End date must be on or after the start date.'})
+    def save(self, *args, **kwargs):
+        if self.type == self.ChallengeType.DAYS:
+            self.end_date = self.start_date + timedelta(days=self.duration_days - 1)
+        elif self.type == self.ChallengeType.INSTANT:
+            self.duration_days = (self.end_date - self.start_date).days + 1
+        super().save(*args, **kwargs)
+    def is_today_editable(self):
+        today = timezone.localdate()
+        return self.type == self.ChallengeType.DAYS and self.start_date <= today <= self.end_date
+    def get_stats(self):
+        today = timezone.localdate()
+        completed_dates = set(
+            self.days.filter(status=ChallengeDay.Status.COMPLETED).values_list('date', flat=True)
+        )
+        completed = missed = remaining = 0
+        longest_streak = running = 0
+        all_dates = [self.start_date + timedelta(days=i) for i in range(self.duration_days)]
+        for d in all_dates:
+            if d in completed_dates:
+                completed += 1
+                running += 1
+                longest_streak = max(longest_streak, running)
+            else:
+                running = 0
+                if d < today:
+                    missed += 1
+                else:
+                    remaining += 1 
+        current_streak = 0
+        past_and_today = [d for d in all_dates if d <= today]
+        for d in reversed(past_and_today):
+            if d in completed_dates:
+                current_streak += 1
+            elif d == today:
+                continue 
+            else:
+                break
+        return {
+            'total_days': self.duration_days,
+            'completed': completed,
+            'missed': missed,
+            'remaining': remaining,
+            'current_streak': current_streak,
+            'longest_streak': longest_streak,
+        }
+
+
+class ChallengeDay(models.Model):
+    class Status(models.TextChoices):
+        COMPLETED = 'completed', 'Completed'
+    challenge = models.ForeignKey(Challenge, on_delete=models.CASCADE, related_name='days')
+    date = models.DateField()
+    status = models.CharField(max_length=10, choices=Status.choices, default=Status.COMPLETED)
+    marked_at = models.DateTimeField(auto_now_add=True)
+    class Meta:
+        ordering = ['date']
+
+        unique_together = ('challenge', 'date')
+    def __str__(self):
+        return f'{self.challenge.title} - {self.date}'

@@ -1,22 +1,22 @@
 from django.shortcuts import render
 from rest_framework import generics, status
-from .models import ProfessionalDevelopment, Project, AboutMe, DayLog, OperativeGoal, GoalDayStatus, ScrapbookStamp, OperativeNote, DreamWish, WatchlistItem, HobbyItem, MusicVibeItem, Task
-from .serializers import ProfessionalDevelopmentSerializer, ProjectSerializer, DreamWishSerializer, HobbyItemSerializer, MusicVibeItemSerializer, TaskSerializer, AboutMeSerializer, DayLogSerializer, OperativeNoteSerializer, ScrapbookStampSerializer, DreamWishSerializer, WatchlistItemSerializer, OperativeGoalSerializer
+from .models import Challenge, ChallengeDay, ProfessionalDevelopment, Project, AboutMe, DayLog, OperativeGoal, GoalDayStatus, ScrapbookStamp, OperativeNote, DreamWish, WatchlistItem, HobbyItem, MusicVibeItem, Task
+from .serializers import ChallengeSerializer, InstantStatusSerializer, ProfessionalDevelopmentSerializer, ProjectSerializer, DreamWishSerializer, HobbyItemSerializer, MusicVibeItemSerializer, TaskSerializer, AboutMeSerializer, DayLogSerializer, OperativeNoteSerializer, ScrapbookStampSerializer, DreamWishSerializer, WatchlistItemSerializer, OperativeGoalSerializer
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser 
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
-
+from django.utils import timezone
+from rest_framework import status
+from rest_framework.decorators import action
 
 class projectListView(generics.ListCreateAPIView):
     queryset = Project.objects.all()
     serializer_class = ProjectSerializer
 
-
 class ProjectDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Project.objects.all()
     serializer_class = ProjectSerializer
-
 
 class ProfessionalDevelopmentListView(generics.ListCreateAPIView):
     queryset = ProfessionalDevelopment.objects.all()
@@ -161,3 +161,57 @@ class VerifySecretView(APIView):
             allowed = False
             
         return Response({'allowed': allowed})
+
+
+
+class ChallengeListCreateAPIView(generics.ListCreateAPIView):
+    queryset = Challenge.objects.all()
+    serializer_class = ChallengeSerializer
+
+
+class ChallengeRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Challenge.objects.all()
+    serializer_class = ChallengeSerializer
+
+
+class ChallengeMarkDayAPIView(APIView):
+    def post(self, request, pk):
+        challenge = get_object_or_404(Challenge, pk=pk)
+        if challenge.type != Challenge.ChallengeType.DAYS:
+            return Response(
+                {'detail': 'Only days challenges have daily marking.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        today = timezone.localdate()
+        if not challenge.is_today_editable():
+            return Response(
+                {'detail': 'This challenge has no editable day today.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        day = challenge.days.filter(date=today).first()
+        if day:
+            day.delete()
+            completed = False
+        else:
+            ChallengeDay.objects.create(challenge=challenge, date=today)
+            completed = True
+
+        return Response(
+            {'date': today, 'completed': completed, 'stats': challenge.get_stats()},
+            status=status.HTTP_200_OK,
+        )
+
+
+class ChallengeInstantStatusAPIView(APIView):
+    def patch(self, request, pk):
+        challenge = get_object_or_404(Challenge, pk=pk)
+        if challenge.type != Challenge.ChallengeType.INSTANT:
+            return Response(
+                {'detail': 'Only instant challenges have a status.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        serializer = InstantStatusSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        challenge.instant_status = serializer.validated_data['instant_status']
+        challenge.save(update_fields=['instant_status'])
+        return Response(ChallengeSerializer(challenge).data)

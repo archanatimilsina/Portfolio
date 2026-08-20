@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import ProjectDetailView, ProfessionalDevelopmentListView, TaskRetrieveUpdateDestroyAPIView, TaskListCreateAPIView, projectListView, ProfessionalDevelopmentDetailView, AboutMeListCreateView, AboutMeRetrieveUpdateDestroyView, DayLogListCreateView, DayLogDetailView, ScrapbookArchiveAPIView, ScrapbookStampDetailAPIView, NoteListCreateAPIView, NoteRetrieveUpdateDestroyAPIView, DreamWishListCreateAPIView, DreamWishDetailAPIView, WatchlistItemListCreateAPIView, WatchlistItemRetrieveUpdateDestroyAPIView, GoalListCreateAPIView, GoalRetrieveUpdateDestroyAPIView, GoalDayToggleAPIView, VerifySecretView, HobbyListCreateAPIView, HobbyRetrieveUpdateDestroyAPIView, MusicVibeListCreateAPIView, MusicVibeRetrieveUpdateDestroyAPIView
+from .views import ProjectDetailView,ChallengeListCreateAPIView, ChallengeMarkDayAPIView ,ChallengeInstantStatusAPIView ,  ChallengeRetrieveUpdateDestroyAPIView, ProfessionalDevelopmentListView, TaskRetrieveUpdateDestroyAPIView, TaskListCreateAPIView, projectListView, ProfessionalDevelopmentDetailView, AboutMeListCreateView, AboutMeRetrieveUpdateDestroyView, DayLogListCreateView, DayLogDetailView, ScrapbookArchiveAPIView, ScrapbookStampDetailAPIView, NoteListCreateAPIView, NoteRetrieveUpdateDestroyAPIView, DreamWishListCreateAPIView, DreamWishDetailAPIView, WatchlistItemListCreateAPIView, WatchlistItemRetrieveUpdateDestroyAPIView, GoalListCreateAPIView, GoalRetrieveUpdateDestroyAPIView, GoalDayToggleAPIView, VerifySecretView, HobbyListCreateAPIView, HobbyRetrieveUpdateDestroyAPIView, MusicVibeListCreateAPIView, MusicVibeRetrieveUpdateDestroyAPIView
 
 urlpatterns = [
     path('projectListView/',projectListView.as_view() ),
@@ -28,8 +28,10 @@ urlpatterns = [
     path('tasks/',        TaskListCreateAPIView.as_view(),          name='task-list-create'),
     path('tasks/<int:pk>/', TaskRetrieveUpdateDestroyAPIView.as_view(), name='task-detail'),
     path('verify-secret/', VerifySecretView.as_view(), name='verify-secret'),
- 
-
+    path('challenges/', ChallengeListCreateAPIView.as_view(), name='challenge-list-create'),
+    path('challenges/<int:pk>/', ChallengeRetrieveUpdateDestroyAPIView.as_view(), name='challenge-detail'),
+    path('challenges/<int:pk>/mark-day/', ChallengeMarkDayAPIView.as_view(), name='challenge-mark-day'),
+    path('challenges/<int:pk>/instant-status/', ChallengeInstantStatusAPIView.as_view(), name='challenge-instant-status'),
 ]
 
 

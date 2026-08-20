@@ -14,6 +14,7 @@ import ProjectsPage from './ProjectDetail';
 import ProfessionalDevPage from './ProfessionalDev';
 import MusicVibes from './music';
 import GestureDraw from './GestureDraw';
+import ChallengeTracker from "./Challengetracker";
 
 export const revalidate = 60;
 const C = {
@@ -118,6 +119,7 @@ const SECTIONS = [
   { id:"dramalist",        icon:"🍀",  label:"Pearl Collection",      group:"explore" },
   { id:"hobbies",          icon:"🐙",  label:"Hobi",         group:"explore" },
   { id:"goals",            icon:"🐞",  label:"planni",           group:"life"    },
+  { id:"challenges",       icon:"🌠",  label:"challengi",           group:"life"    },
   { id:"notes",            icon:"🎨",  label:"Noti",           group:"life"    },
   { id:"wishlist",         icon:"🐳",  label:"Clover",       group:"life"    },
   { id:"tellme",           icon:"🐣",  label:"miday",          group:"life"    },
@@ -166,6 +168,7 @@ function SectionPage({ id, onBack }) {
   if (id === "professionalDev") return <ProfessionalDevPage onBack={onBack} />;
   if (id === "music")           return <MusicVibes         onBack={onBack} />;
   if (id === "gestureDraw")           return <GestureDraw         onBack={onBack} />;
+  if (id === "challenges")           return <ChallengeTracker      onBack={onBack} />;
 
   return (
     <PlaceholderWrap>

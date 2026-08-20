@@ -1,9 +1,10 @@
 from rest_framework import serializers
-from .models import ProfessionalDevelopment, Project, AboutMe, DayLog, Task, ScrapbookStamp,OperativeNote, DreamWish, WatchlistItem, OperativeGoal,  HobbyItem, MusicVibeItem
+from .models import Challenge, ChallengeDay,ProfessionalDevelopment, Project, AboutMe, DayLog, Task, ScrapbookStamp,OperativeNote, DreamWish, WatchlistItem, OperativeGoal,  HobbyItem, MusicVibeItem
 import requests
 from django.core.files.base import ContentFile
 from urllib.parse import urlparse
-import os
+from datetime import timedelta
+
 
  
 class ProjectSerializer(serializers.ModelSerializer):
@@ -275,4 +276,70 @@ class TaskSerializer(serializers.ModelSerializer):
         if not value.strip():
             raise serializers.ValidationError("Task text cannot be empty.")
         return value.strip()
- 
+
+
+
+
+class ChallengeDaySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ChallengeDay
+        fields = ['id', 'date', 'status', 'marked_at']
+        read_only_fields = ['id', 'marked_at']
+
+
+class ChallengeSerializer(serializers.ModelSerializer):
+    stats = serializers.SerializerMethodField()
+    completed_dates = serializers.SerializerMethodField()
+    duration_days = serializers.IntegerField(required=False)
+    end_date = serializers.DateField(required=False)
+    class Meta:
+        model = Challenge
+        fields = [
+            'id',
+            'title',
+            'type',
+            'start_date',
+            'duration_days',
+            'end_date',
+            'instant_status',
+            'created_at',
+            'stats',
+            'completed_dates',
+        ]
+        read_only_fields = ['id', 'created_at']
+    def get_stats(self, obj):
+        if obj.type != Challenge.ChallengeType.DAYS:
+            return None
+        return obj.get_stats()
+    def get_completed_dates(self, obj):
+        if obj.type != Challenge.ChallengeType.DAYS:
+            return []
+        return list(
+            obj.days.filter(status=ChallengeDay.Status.COMPLETED).values_list('date', flat=True)
+        )
+    def validate(self, attrs):
+        type_ = attrs.get('type', getattr(self.instance, 'type', None))
+        start_date = attrs.get('start_date', getattr(self.instance, 'start_date', None))
+        if type_ == Challenge.ChallengeType.DAYS:
+            duration = attrs.get('duration_days', getattr(self.instance, 'duration_days', None))
+            if not duration or duration < 1:
+                raise serializers.ValidationError(
+                    {'duration_days': 'Required and must be at least 1 for a days challenge.'}
+                )
+            attrs['duration_days'] = duration
+            attrs['end_date'] = start_date + timedelta(days=duration - 1)
+        elif type_ == Challenge.ChallengeType.INSTANT:
+            end_date = attrs.get('end_date', getattr(self.instance, 'end_date', None))
+            if not end_date:
+                raise serializers.ValidationError({'end_date': 'Required for an instant challenge.'})
+            if end_date < start_date:
+                raise serializers.ValidationError(
+                    {'end_date': 'End date must be on or after the start date.'}
+                )
+            attrs['end_date'] = end_date
+            attrs['duration_days'] = (end_date - start_date).days + 1
+        return attrs
+
+
+class InstantStatusSerializer(serializers.Serializer):
+    instant_status = serializers.ChoiceField(choices=Challenge.InstantStatus.choices)
