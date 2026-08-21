@@ -161,42 +161,30 @@ class VerifySecretView(APIView):
             allowed = False
             
         return Response({'allowed': allowed})
-
+    
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from rest_framework import generics, status
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
 
 from .models import Challenge, ChallengeDay
 from .serializers import ChallengeSerializer, InstantStatusSerializer
 
 
 class ChallengeListCreateAPIView(generics.ListCreateAPIView):
+    queryset = Challenge.objects.all()
     serializer_class = ChallengeSerializer
-    permission_classes = [IsAuthenticated]
-
-    def get_queryset(self):
-        return Challenge.objects.filter(user=self.request.user)
-
-    def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
 
 
 class ChallengeRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Challenge.objects.all()
     serializer_class = ChallengeSerializer
-    permission_classes = [IsAuthenticated]
-
-    def get_queryset(self):
-        return Challenge.objects.filter(user=self.request.user)
 
 
 class ChallengeMarkDayAPIView(APIView):
-    permission_classes = [IsAuthenticated]
-
     def post(self, request, pk):
-        challenge = get_object_or_404(Challenge, pk=pk, user=request.user)
+        challenge = get_object_or_404(Challenge, pk=pk)
 
         if challenge.type != Challenge.ChallengeType.DAYS:
             return Response(
@@ -226,10 +214,8 @@ class ChallengeMarkDayAPIView(APIView):
 
 
 class ChallengeInstantStatusAPIView(APIView):
-    permission_classes = [IsAuthenticated]
-
     def patch(self, request, pk):
-        challenge = get_object_or_404(Challenge, pk=pk, user=request.user)
+        challenge = get_object_or_404(Challenge, pk=pk)
 
         if challenge.type != Challenge.ChallengeType.INSTANT:
             return Response(
