@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import styled, { createGlobalStyle, keyframes, css } from 'styled-components';
 import { ChevronDown, Flame, X, Check, Clock, Lock, Plus, Calendar, Pencil, Trash2 } from 'lucide-react';
-const API_BASE = '/api';
+const VITE_API_BASE = import.meta.env.VITE_API_URL;
+const API_BASE = `${VITE_API_BASE}/api`;
+
 async function apiRequest(path, options = {}) {
   const res = await fetch(`${API_BASE}${path}`, {
     headers: {
