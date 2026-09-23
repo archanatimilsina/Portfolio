@@ -10,6 +10,15 @@ from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils import timezone
+import uuid
+from django.core.exceptions import ValidationError
+from django.db import models
+from datetime import timedelta
+from django.db import models
+from django.core.exceptions import ValidationError
+from django.utils import timezone
+
+
 
 class ProfessionalDevelopment(models.Model):
     DEVELOPMENT_TYPES = [
@@ -477,53 +486,76 @@ class Task(models.Model):
         status = "✓" if self.completed else "○"
         return f"[{status}] {self.text[:60]} ({self.due_date})"
 
-
 class Challenge(models.Model):
     class ChallengeType(models.TextChoices):
         DAYS = 'days', 'Days'
         INSTANT = 'instant', 'Instant'
+
     class InstantStatus(models.TextChoices):
         COMPLETED = 'completed', 'Completed'
         NOT_COMPLETED = 'not_completed', 'Not completed'
         PENDING = 'pending', 'Pending'
+
+    class Status(models.TextChoices):
+        ONGOING = 'ongoing', 'Ongoing'
+        ENDED = 'ended', 'Ended'
+
     title = models.CharField(max_length=200)
     type = models.CharField(max_length=10, choices=ChallengeType.choices)
     start_date = models.DateField()
     duration_days = models.PositiveIntegerField()
     end_date = models.DateField()
+
     instant_status = models.CharField(
         max_length=20,
         choices=InstantStatus.choices,
         default=InstantStatus.PENDING,
         blank=True,
     )
+
     created_at = models.DateTimeField(auto_now_add=True)
+
     class Meta:
         ordering = ['-created_at']
+
     def __str__(self):
         return f'{self.title} ({self.get_type_display()})'
+
     def clean(self):
         if self.type == self.ChallengeType.DAYS and (not self.duration_days or self.duration_days < 1):
             raise ValidationError({'duration_days': 'Must be at least 1 day for a days challenge.'})
         if self.type == self.ChallengeType.INSTANT and self.end_date and self.end_date < self.start_date:
             raise ValidationError({'end_date': 'End date must be on or after the start date.'})
+
     def save(self, *args, **kwargs):
         if self.type == self.ChallengeType.DAYS:
             self.end_date = self.start_date + timedelta(days=self.duration_days - 1)
         elif self.type == self.ChallengeType.INSTANT:
             self.duration_days = (self.end_date - self.start_date).days + 1
         super().save(*args, **kwargs)
+
     def is_today_editable(self):
         today = timezone.localdate()
         return self.type == self.ChallengeType.DAYS and self.start_date <= today <= self.end_date
+
+    @property
+    def status(self):
+        if self.type != self.ChallengeType.DAYS:
+            return None
+        today = timezone.localdate()
+        return self.Status.ENDED if today > self.end_date else self.Status.ONGOING
+
     def get_stats(self):
         today = timezone.localdate()
         completed_dates = set(
             self.days.filter(status=ChallengeDay.Status.COMPLETED).values_list('date', flat=True)
         )
+
         completed = missed = remaining = 0
         longest_streak = running = 0
+
         all_dates = [self.start_date + timedelta(days=i) for i in range(self.duration_days)]
+
         for d in all_dates:
             if d in completed_dates:
                 completed += 1
@@ -534,16 +566,20 @@ class Challenge(models.Model):
                 if d < today:
                     missed += 1
                 else:
-                    remaining += 1 
+                    remaining += 1
+
         current_streak = 0
         past_and_today = [d for d in all_dates if d <= today]
         for d in reversed(past_and_today):
             if d in completed_dates:
                 current_streak += 1
             elif d == today:
-                continue 
+                continue
             else:
                 break
+
+        completion_pct = round((completed / self.duration_days) * 100) if self.duration_days else 0
+
         return {
             'total_days': self.duration_days,
             'completed': completed,
@@ -551,19 +587,59 @@ class Challenge(models.Model):
             'remaining': remaining,
             'current_streak': current_streak,
             'longest_streak': longest_streak,
+            'completion_pct': completion_pct,
+            'status': self.status,
         }
 
 
 class ChallengeDay(models.Model):
     class Status(models.TextChoices):
         COMPLETED = 'completed', 'Completed'
+
     challenge = models.ForeignKey(Challenge, on_delete=models.CASCADE, related_name='days')
     date = models.DateField()
     status = models.CharField(max_length=10, choices=Status.choices, default=Status.COMPLETED)
     marked_at = models.DateTimeField(auto_now_add=True)
+
     class Meta:
         ordering = ['date']
-
         unique_together = ('challenge', 'date')
+
     def __str__(self):
         return f'{self.challenge.title} - {self.date}'
+
+
+
+def pdf_upload_path(instance, filename):
+    return f"pdfs/{instance.id}/{filename}"
+
+
+def validate_pdf(value):
+    if not value.name.lower().endswith(".pdf"):
+        raise ValidationError("Only PDF files are allowed.")
+
+
+class PDFDocument(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    title = models.CharField(max_length=255)
+    file = models.FileField(upload_to=pdf_upload_path, validators=[validate_pdf])
+    size = models.PositiveIntegerField(blank=True, null=True, editable=False)
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-uploaded_at"]
+
+    def __str__(self):
+        return self.title
+
+    def save(self, *args, **kwargs):
+        if self.file:
+            self.size = self.file.size
+        super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        storage, path = self.file.storage, self.file.name
+        super().delete(*args, **kwargs)
+        if path:
+            storage.delete(path)

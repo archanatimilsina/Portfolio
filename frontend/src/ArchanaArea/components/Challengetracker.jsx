@@ -1,6 +1,10 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import styled, { createGlobalStyle, keyframes, css } from 'styled-components';
-import { ChevronDown, Flame, X, Check, Clock, Lock, Plus, Calendar, Pencil, Trash2 } from 'lucide-react';
+import {
+  ChevronDown, Flame, X, Check, Clock, Lock, Plus, Calendar, Pencil, Trash2,
+  Award, Sparkles,
+} from 'lucide-react';
+
 const VITE_API_BASE = import.meta.env.VITE_API_URL;
 const API_BASE = `${VITE_API_BASE}/api`;
 
@@ -19,7 +23,7 @@ async function apiRequest(path, options = {}) {
       const body = await res.json();
       detail = body.detail || JSON.stringify(body);
     } catch {
-      
+      // response wasn't JSON
     }
     throw new Error(detail);
   }
@@ -27,7 +31,6 @@ async function apiRequest(path, options = {}) {
   if (res.status === 204) return null;
   return res.json();
 }
-
 
 function transformChallenge(c) {
   return {
@@ -57,6 +60,9 @@ function buildChallengePayload(formValues) {
   return body;
 }
 
+/* ============================================================
+   DATE HELPERS
+   ============================================================ */
 
 function parseISODate(iso) {
   const [y, m, d] = iso.split('-').map(Number);
@@ -105,6 +111,7 @@ function dayLabel(iso) {
   const d = parseISODate(iso);
   return d.toLocaleDateString('en-US', { weekday: 'short' });
 }
+
 function getDayStatus(iso, log) {
   if (log[iso] === 'completed') return 'completed';
   const cmp = compareDates(iso, todayISO());
@@ -117,20 +124,125 @@ function isEditable(iso) {
   return iso === todayISO();
 }
 
+/* ============================================================
+   BADGE (PNG certificate) — pure client-side canvas render
+   ============================================================ */
+
+function wrapCanvasText(ctx, text, centerX, centerY, maxWidth, lineHeight) {
+  const words = text.split(' ');
+  const lines = [];
+  let line = '';
+
+  words.forEach((word, i) => {
+    const testLine = line ? `${line} ${word}` : word;
+    if (ctx.measureText(testLine).width > maxWidth && line) {
+      lines.push(line);
+      line = word;
+    } else {
+      line = testLine;
+    }
+    if (i === words.length - 1) lines.push(line);
+  });
+
+  const startY = centerY - ((lines.length - 1) * lineHeight) / 2;
+  lines.forEach((l, i) => ctx.fillText(l, centerX, startY + i * lineHeight));
+}
+
+function downloadChallengeBadge(challenge, stats) {
+  const canvas = document.createElement('canvas');
+  canvas.width = 800;
+  canvas.height = 500;
+  const ctx = canvas.getContext('2d');
+
+  const bg = ctx.createLinearGradient(0, 0, 800, 500);
+  bg.addColorStop(0, '#ecfdf5');
+  bg.addColorStop(1, '#f0fdf4');
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, 800, 500);
+
+  ctx.strokeStyle = '#22c55e';
+  ctx.lineWidth = 5;
+  ctx.strokeRect(18, 18, 764, 464);
+  ctx.strokeStyle = 'rgba(34, 197, 94, 0.35)';
+  ctx.lineWidth = 1;
+  ctx.strokeRect(30, 30, 740, 440);
+
+  ctx.textAlign = 'center';
+
+  ctx.fillStyle = '#16a34a';
+  ctx.font = '700 20px sans-serif';
+  ctx.fillText('CHALLENGE COMPLETE', 400, 95);
+
+  ctx.fillStyle = '#14251c';
+  ctx.font = '700 38px sans-serif';
+  wrapCanvasText(ctx, challenge.title, 400, 165, 660, 44);
+
+  ctx.fillStyle = '#6b7d74';
+  ctx.font = '500 18px sans-serif';
+  ctx.fillText(
+    `${formatDisplayDate(challenge.startDate)}  →  ${formatDisplayDate(challenge.endDate)}`,
+    400,
+    250
+  );
+
+  ctx.fillStyle = '#22c55e';
+  ctx.font = '700 90px sans-serif';
+  ctx.fillText(`${stats.completionPct}%`, 400, 365);
+
+  ctx.fillStyle = '#6b7d74';
+  ctx.font = '600 16px sans-serif';
+  ctx.fillText('COMPLETION', 400, 392);
+
+  ctx.fillStyle = '#14251c';
+  ctx.font = '500 18px sans-serif';
+  ctx.fillText(
+    `${stats.completed}/${stats.totalDays} days done  ·  Best streak ${stats.longestStreak}`,
+    400,
+    440
+  );
+
+  const link = document.createElement('a');
+  link.download = `${challenge.title.trim().replace(/\s+/g, '_').toLowerCase()}_badge.png`;
+  link.href = canvas.toDataURL('image/png');
+  link.click();
+}
+
+/* ============================================================
+   THEME
+   ============================================================ */
+
+const C = {
+  bg: '#f7faf8',
+  card: '#ffffff',
+  border: '#e3e9e5',
+  borderStrong: '#cfdbd3',
+  text: '#14251c',
+  muted: '#6b7d74',
+  soft: '#9aa8a1',
+  green: '#22c55e',
+  greenDark: '#16a34a',
+  greenLt: '#dcfce7',
+  amber: '#f59e0b',
+  amberLt: '#fef3c7',
+  danger: '#ef4444',
+  dangerLt: '#fef2f2',
+  fieldBg: '#f6f9f7',
+};
+
 const GlobalStyle = createGlobalStyle`
   @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&display=swap');
 `;
 
 const todayPulse = keyframes`
-  0%, 100% { box-shadow: 0 0 0 0 rgba(251, 191, 36, 0.35); }
-  50% { box-shadow: 0 0 0 5px rgba(251, 191, 36, 0); }
+  0%, 100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.3); }
+  50% { box-shadow: 0 0 0 5px rgba(34, 197, 94, 0); }
 `;
 
 const PageWrapper = styled.div`
   min-height: 100%;
   width: 100%;
-  background: #09090b;
-  color: #f4f4f5;
+  background: ${C.bg};
+  color: ${C.text};
   font-family: 'Inter', sans-serif;
 `;
 
@@ -150,23 +262,26 @@ const HeaderRow = styled.div`
 
 const Title = styled.h1`
   font-family: 'Space Grotesk', sans-serif;
-  font-size: 1.5rem;
-  font-weight: 600;
+  font-size: 1.6rem;
+  font-weight: 700;
   letter-spacing: -0.01em;
-  color: #fafafa;
+  color: ${C.text};
   margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 `;
 
 const Subtitle = styled.p`
   margin: 0.25rem 0 0;
   font-size: 0.875rem;
-  color: #71717a;
+  color: ${C.muted};
 `;
 
 const ErrorText = styled.p`
   margin: 0 0 1rem;
   font-size: 0.8125rem;
-  color: #fda4af;
+  color: #dc2626;
 `;
 
 const NewChallengeButton = styled.button`
@@ -175,23 +290,41 @@ const NewChallengeButton = styled.button`
   align-items: center;
   gap: 0.375rem;
   border: none;
-  border-radius: 0.5rem;
-  background: #fbbf24;
-  padding: 0.5rem 0.875rem;
+  border-radius: 0.65rem;
+  background: ${C.green};
+  padding: 0.6rem 1rem;
   font-size: 0.875rem;
-  font-weight: 500;
-  color: #09090b;
+  font-weight: 600;
+  color: #ffffff;
   cursor: pointer;
-  transition: background 0.15s ease;
+  box-shadow: 0 2px 8px rgba(34, 197, 94, 0.25);
+  transition: background 0.15s ease, box-shadow 0.15s ease;
 
   &:hover {
-    background: #fcd34d;
+    background: ${C.greenDark};
+    box-shadow: 0 4px 12px rgba(34, 197, 94, 0.3);
   }
 
   &:disabled {
     opacity: 0.6;
     cursor: default;
+    box-shadow: none;
   }
+`;
+
+const SectionBlock = styled.div`
+  margin-bottom: 2rem;
+  &:last-child { margin-bottom: 0; }
+`;
+
+const SectionTitle = styled.h2`
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: ${C.soft};
+  margin: 0 0 0.75rem;
 `;
 
 const ChallengeList = styled.div`
@@ -201,20 +334,22 @@ const ChallengeList = styled.div`
 `;
 
 const EmptyState = styled.div`
-  border-radius: 0.75rem;
-  border: 1px dashed #27272a;
+  border-radius: 1rem;
+  border: 1.5px dashed ${C.borderStrong};
+  background: ${C.card};
   padding: 3.5rem 0;
   text-align: center;
   font-size: 0.875rem;
-  color: #71717a;
+  color: ${C.muted};
 `;
 
 const FormWrapper = styled.form`
   margin-bottom: 1.5rem;
-  border-radius: 0.75rem;
-  border: 1px solid #27272a;
-  background: #18181b;
-  padding: 1.25rem;
+  border-radius: 1rem;
+  border: 1.5px solid ${C.border};
+  background: ${C.card};
+  padding: 1.4rem;
+  box-shadow: 0 2px 10px rgba(20, 37, 28, 0.04);
 `;
 
 const FieldGroup = styled.div`
@@ -224,32 +359,27 @@ const FieldGroup = styled.div`
 const FieldLabel = styled.label`
   margin-bottom: 0.375rem;
   display: block;
-  font-size: 0.75rem;
-  font-weight: 500;
+  font-size: 0.72rem;
+  font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: #71717a;
+  color: ${C.soft};
 `;
 
 const TextInput = styled.input`
   width: 100%;
   box-sizing: border-box;
-  border-radius: 0.5rem;
-  border: 1px solid #27272a;
-  background: #09090b;
-  padding: 0.5rem 0.75rem;
+  border-radius: 0.6rem;
+  border: 1.5px solid ${C.border};
+  background: ${C.fieldBg};
+  padding: 0.55rem 0.75rem;
   font-size: 0.875rem;
-  color: #f4f4f5;
+  color: ${C.text};
   outline: none;
   transition: border-color 0.15s ease;
 
-  &::placeholder {
-    color: #52525b;
-  }
-
-  &:focus {
-    border-color: #fbbf24;
-  }
+  &::placeholder { color: ${C.soft}; }
+  &:focus { border-color: ${C.green}; background: ${C.card}; }
 `;
 
 const DateInput = styled(TextInput).attrs({ type: 'date' })``;
@@ -262,19 +392,17 @@ const TypeToggleRow = styled.div`
 
 const TypeButton = styled.button`
   flex: 1;
-  border-radius: 0.5rem;
-  border: 1px solid ${(p) => (p.$active ? '#fbbf24' : '#27272a')};
-  background: ${(p) => (p.$active ? 'rgba(251, 191, 36, 0.1)' : '#09090b')};
-  color: ${(p) => (p.$active ? '#fcd34d' : '#a1a1aa')};
-  padding: 0.5rem 0.75rem;
+  border-radius: 0.6rem;
+  border: 1.5px solid ${(p) => (p.$active ? C.green : C.border)};
+  background: ${(p) => (p.$active ? C.greenLt : C.fieldBg)};
+  color: ${(p) => (p.$active ? C.greenDark : C.muted)};
+  padding: 0.55rem 0.75rem;
   font-size: 0.875rem;
-  font-weight: 500;
+  font-weight: 600;
   cursor: pointer;
   transition: all 0.15s ease;
 
-  &:hover {
-    border-color: ${(p) => (p.$active ? '#fbbf24' : '#3f3f46')};
-  }
+  &:hover { border-color: ${(p) => (p.$active ? C.green : C.borderStrong)}; }
 `;
 
 const DateGrid = styled.div`
@@ -289,25 +417,25 @@ const EndDateInfo = styled.div`
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  border-radius: 0.5rem;
-  background: #09090b;
+  border-radius: 0.6rem;
+  background: ${C.greenLt};
   padding: 0.625rem 0.75rem;
   font-size: 0.875rem;
-  color: #a1a1aa;
+  color: ${C.greenDark};
 `;
 
 const CalendarIcon = styled(Calendar)`
   flex-shrink: 0;
-  color: #fbbf24;
+  color: ${C.green};
 `;
 
 const Strong = styled.span`
-  font-weight: 500;
-  color: #e4e4e7;
+  font-weight: 700;
+  color: ${C.greenDark};
 `;
 
 const Dot = styled.span`
-  color: #52525b;
+  color: ${C.soft};
 `;
 
 const ButtonRow = styled.div`
@@ -317,44 +445,43 @@ const ButtonRow = styled.div`
 
 const SubmitButton = styled.button`
   border: none;
-  border-radius: 0.5rem;
-  background: #fbbf24;
-  padding: 0.5rem 1rem;
+  border-radius: 0.6rem;
+  background: ${C.green};
+  padding: 0.55rem 1.1rem;
   font-size: 0.875rem;
-  font-weight: 500;
-  color: #09090b;
+  font-weight: 600;
+  color: #ffffff;
   cursor: pointer;
+  transition: background 0.15s ease;
 
-  &:hover {
-    background: #fcd34d;
-  }
-
-  &:disabled {
-    opacity: 0.6;
-    cursor: default;
-  }
+  &:hover { background: ${C.greenDark}; }
+  &:disabled { opacity: 0.6; cursor: default; }
 `;
 
 const CancelButton = styled.button`
   border: none;
   background: transparent;
-  border-radius: 0.5rem;
-  padding: 0.5rem 1rem;
+  border-radius: 0.6rem;
+  padding: 0.55rem 1.1rem;
   font-size: 0.875rem;
-  font-weight: 500;
-  color: #a1a1aa;
+  font-weight: 600;
+  color: ${C.muted};
   cursor: pointer;
 
-  &:hover {
-    color: #e4e4e7;
-  }
+  &:hover { color: ${C.text}; }
 `;
 
 const CardWrapper = styled.div`
   overflow: hidden;
-  border-radius: 0.75rem;
-  border: 1px solid #27272a;
-  background: #18181b;
+  border-radius: 1rem;
+  border: 1.5px solid ${C.border};
+  background: ${C.card};
+  box-shadow: 0 2px 10px rgba(20, 37, 28, 0.04);
+  transition: box-shadow 0.2s ease;
+
+  &:hover {
+    box-shadow: 0 6px 18px rgba(20, 37, 28, 0.07);
+  }
 `;
 
 const CardHeaderButton = styled.div`
@@ -363,7 +490,7 @@ const CardHeaderButton = styled.div`
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  padding: 1rem 1.25rem;
+  padding: 1.1rem 1.25rem;
   text-align: left;
   background: transparent;
   border: none;
@@ -379,6 +506,7 @@ const TitleRow = styled.div`
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  flex-wrap: wrap;
 `;
 
 const CardTitle = styled.h3`
@@ -386,28 +514,49 @@ const CardTitle = styled.h3`
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 1rem;
-  font-weight: 600;
-  color: #fafafa;
+  font-size: 1.02rem;
+  font-weight: 700;
+  color: ${C.text};
   margin: 0;
 `;
 
 const TypeBadge = styled.span`
   flex-shrink: 0;
   border-radius: 9999px;
-  background: #27272a;
-  padding: 0.125rem 0.5rem;
+  background: ${C.fieldBg};
+  border: 1px solid ${C.border};
+  padding: 0.125rem 0.55rem;
   font-size: 11px;
-  font-weight: 500;
+  font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: #a1a1aa;
+  color: ${C.muted};
+`;
+
+const StatusPill = styled.span`
+  flex-shrink: 0;
+  border-radius: 9999px;
+  padding: 0.125rem 0.55rem;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  ${(p) =>
+    p.$tone === 'ended'
+      ? css`
+          background: ${C.greenLt};
+          color: ${C.greenDark};
+        `
+      : css`
+          background: ${C.amberLt};
+          color: #b45309;
+        `}
 `;
 
 const DateRange = styled.p`
-  margin: 0.125rem 0 0;
-  font-size: 0.75rem;
-  color: #71717a;
+  margin: 0.2rem 0 0;
+  font-size: 0.78rem;
+  color: ${C.muted};
 `;
 
 const CardMetaRow = styled.div`
@@ -421,35 +570,33 @@ const StreakBadge = styled.div`
   display: flex;
   align-items: center;
   gap: 0.375rem;
-  color: #fbbf24;
+  color: #ea580c;
 `;
 
 const StreakValue = styled.span`
   font-size: 0.875rem;
-  font-weight: 600;
+  font-weight: 700;
 `;
 
 const ProgressOuter = styled.div`
   display: none;
   width: 4rem;
 
-  @media (min-width: 640px) {
-    display: block;
-  }
+  @media (min-width: 640px) { display: block; }
 `;
 
 const ProgressTrack = styled.div`
-  height: 0.375rem;
+  height: 0.4rem;
   width: 100%;
   overflow: hidden;
   border-radius: 9999px;
-  background: #27272a;
+  background: ${C.fieldBg};
 `;
 
 const ProgressFill = styled.div`
   height: 100%;
   border-radius: 9999px;
-  background: #fbbf24;
+  background: ${C.green};
   width: ${(p) => p.$pct}%;
 `;
 
@@ -460,48 +607,42 @@ const IconButton = styled.button`
   flex-shrink: 0;
   border: none;
   background: transparent;
-  border-radius: 0.375rem;
-  padding: 0.25rem;
-  color: #52525b;
+  border-radius: 0.4rem;
+  padding: 0.3rem;
+  color: ${C.soft};
   cursor: pointer;
-  transition: color 0.15s ease;
+  transition: all 0.15s ease;
 
-  &:hover {
-    color: #e4e4e7;
-  }
-
-  &:disabled {
-    opacity: 0.5;
-    cursor: default;
-  }
+  &:hover { color: ${C.text}; background: ${C.fieldBg}; }
+  &:disabled { opacity: 0.5; cursor: default; }
 `;
 
 const Chevron = styled(ChevronDown)`
-  color: #71717a;
+  color: ${C.muted};
   transition: transform 0.15s ease;
   transform: rotate(${(p) => (p.$expanded ? '180deg' : '0deg')});
 `;
 
 const CardBody = styled.div`
-  border-top: 1px solid #27272a;
-  padding: 1rem 1.25rem;
+  border-top: 1.5px solid ${C.border};
+  padding: 1.1rem 1.25rem;
 `;
 
 const controlActiveStyles = {
   completed: css`
-    background: rgba(52, 211, 153, 0.15);
-    border-color: #34d399;
-    color: #6ee7b7;
+    background: ${C.greenLt};
+    border-color: ${C.green};
+    color: ${C.greenDark};
   `,
   not_completed: css`
-    background: rgba(251, 113, 133, 0.15);
-    border-color: #fb7185;
-    color: #fda4af;
+    background: ${C.dangerLt};
+    border-color: #f87171;
+    color: #dc2626;
   `,
   pending: css`
-    background: rgba(63, 63, 70, 0.4);
-    border-color: #71717a;
-    color: #e4e4e7;
+    background: ${C.amberLt};
+    border-color: ${C.amber};
+    color: #b45309;
   `,
 };
 
@@ -516,87 +657,79 @@ const ControlButton = styled.button`
   align-items: center;
   justify-content: center;
   gap: 0.375rem;
-  border-radius: 0.5rem;
-  border: 1px solid #27272a;
-  background: transparent;
+  border-radius: 0.6rem;
+  border: 1.5px solid ${C.border};
+  background: ${C.fieldBg};
   padding: 0.5rem 0.75rem;
   font-size: 0.875rem;
-  font-weight: 500;
-  color: #71717a;
+  font-weight: 600;
+  color: ${C.muted};
   cursor: pointer;
   transition: all 0.15s ease;
 
   ${(p) => (p.$active ? controlActiveStyles[p.$statusKey] : '')}
 
-  &:hover {
-    border-color: ${(p) => (p.$active ? undefined : '#3f3f46')};
-  }
-
-  &:disabled {
-    opacity: 0.6;
-    cursor: default;
-  }
+  &:hover { border-color: ${(p) => (p.$active ? undefined : C.borderStrong)}; }
+  &:disabled { opacity: 0.6; cursor: default; }
 `;
 
 const StatsGrid = styled.div`
   margin-bottom: 1rem;
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(4.5rem, 1fr));
   gap: 0.5rem;
 `;
 
 const StatCard = styled.div`
-  border-radius: 0.5rem;
-  background: #09090b;
-  padding: 0.625rem 0.5rem;
+  border-radius: 0.6rem;
+  background: ${C.fieldBg};
+  padding: 0.65rem 0.5rem;
   text-align: center;
 `;
 
 const StatValue = styled.div`
   font-family: 'Space Grotesk', sans-serif;
-  font-size: 1.125rem;
-  font-weight: 600;
-  color: #fafafa;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: ${C.text};
 `;
 
 const StatLabel = styled.div`
   font-size: 10px;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: #71717a;
+  color: ${C.muted};
 `;
 
 const GridWrapper = styled.div`
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  gap: 0.375rem;
+  gap: 0.4rem;
 
-  @media (min-width: 640px) {
-    grid-template-columns: repeat(10, 1fr);
-  }
+  @media (min-width: 640px) { grid-template-columns: repeat(10, 1fr); }
 `;
 
 const cellStatusStyles = {
   completed: css`
-    border-color: #fbbf24;
-    background: rgba(251, 191, 36, 0.9);
-    color: #09090b;
+    border-color: ${C.green};
+    background: ${C.green};
+    color: #ffffff;
   `,
   missed: css`
-    border-color: #27272a;
-    background: transparent;
-    color: #3f3f46;
+    border-color: ${C.border};
+    background: ${C.fieldBg};
+    color: ${C.soft};
   `,
   today: css`
-    border-color: rgba(251, 191, 36, 0.7);
-    background: transparent;
-    color: #fcd34d;
+    border-color: ${C.green};
+    background: ${C.greenLt};
+    color: ${C.greenDark};
   `,
   upcoming: css`
-    border-color: rgba(39, 39, 42, 0.6);
+    border-color: ${C.border};
     border-style: dashed;
     background: transparent;
-    color: #3f3f46;
+    color: ${C.soft};
   `,
 };
 
@@ -607,10 +740,10 @@ const Cell = styled.button`
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  border-radius: 0.375rem;
-  border: 1px solid;
+  border-radius: 0.45rem;
+  border: 1.5px solid;
   font-size: 11px;
-  font-weight: 500;
+  font-weight: 600;
   transition: all 0.15s ease;
   cursor: ${(p) => (p.$editable ? 'pointer' : 'default')};
 
@@ -623,16 +756,14 @@ const Cell = styled.button`
       animation: ${todayPulse} 2.2s ease-in-out infinite;
     `}
 
-  &:hover .lock-icon {
-    opacity: 1;
-  }
+  &:hover .lock-icon { opacity: 1; }
 `;
 
 const DayLetter = styled.span`
   font-size: 9px;
   text-transform: uppercase;
   line-height: 1;
-  opacity: 0.7;
+  opacity: 0.75;
 `;
 
 const DateNum = styled.span`
@@ -645,18 +776,60 @@ const MissedDot = styled.span`
   height: 4px;
   width: 4px;
   border-radius: 9999px;
-  background: #3f3f46;
+  background: ${C.soft};
 `;
 
 const LockIcon = styled(Lock).attrs({ size: 9, className: 'lock-icon' })`
   position: absolute;
   right: 2px;
   top: 2px;
-  color: #3f3f46;
+  color: ${C.soft};
   opacity: 0;
   transition: opacity 0.15s ease;
 `;
 
+const ActionRow = styled.div`
+  margin-top: 1rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  border-top: 1.5px solid ${C.border};
+  padding-top: 1rem;
+`;
+
+const EndedNotice = styled.p`
+  margin: 0;
+  font-size: 0.8125rem;
+  color: ${C.muted};
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+`;
+
+const BadgeButton = styled.button`
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  flex-shrink: 0;
+  border: none;
+  border-radius: 0.6rem;
+  background: ${C.green};
+  padding: 0.55rem 0.9rem;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: #ffffff;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(34, 197, 94, 0.25);
+  transition: background 0.15s ease;
+
+  &:hover { background: ${C.greenDark}; }
+`;
+
+/* ============================================================
+   MAIN PAGE
+   ============================================================ */
 
 export default function ChallengeTrackerPage() {
   const [challenges, setChallenges] = useState([]);
@@ -682,10 +855,17 @@ export default function ChallengeTrackerPage() {
     }
 
     loadChallenges();
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
   }, []);
+
+  const ongoingChallenges = useMemo(
+    () => challenges.filter((c) => c.type === 'instant' || c.backendStats?.status !== 'ended'),
+    [challenges]
+  );
+  const endedChallenges = useMemo(
+    () => challenges.filter((c) => c.type === 'days' && c.backendStats?.status === 'ended'),
+    [challenges]
+  );
 
   function handleNewChallengeClick() {
     if (showForm && !editingChallenge) {
@@ -779,8 +959,11 @@ export default function ChallengeTrackerPage() {
       <Container>
         <HeaderRow>
           <div>
-            <Title>Challenges</Title>
-            <Subtitle>Day-based challenges lock once the day passes. Only today is editable.</Subtitle>
+            <Title>
+              <Sparkles size={20} color={C.green} />
+              Challenges
+            </Title>
+            <Subtitle>Keep showing up. Only today is editable — yesterday's already locked in.</Subtitle>
           </div>
           <NewChallengeButton onClick={handleNewChallengeClick} disabled={loading}>
             <Plus size={16} strokeWidth={2.5} />
@@ -802,25 +985,53 @@ export default function ChallengeTrackerPage() {
         {!loading && loadError && <ErrorText>Couldn't load challenges: {loadError}</ErrorText>}
 
         {!loading && !loadError && (
-          <ChallengeList>
-            {challenges.map((c) => (
-              <ChallengeCard
-                key={c.id}
-                challenge={c}
-                onToggleDay={handleToggleDay}
-                onSetInstantStatus={handleSetInstantStatus}
-                onEdit={handleEditChallenge}
-                onDelete={handleDeleteChallenge}
-              />
-            ))}
-            {challenges.length === 0 && <EmptyState>No challenges yet. Start one above.</EmptyState>}
-          </ChallengeList>
+          <>
+            <SectionBlock>
+              <SectionTitle>Ongoing</SectionTitle>
+              <ChallengeList>
+                {ongoingChallenges.map((c) => (
+                  <ChallengeCard
+                    key={c.id}
+                    challenge={c}
+                    onToggleDay={handleToggleDay}
+                    onSetInstantStatus={handleSetInstantStatus}
+                    onEdit={handleEditChallenge}
+                    onDelete={handleDeleteChallenge}
+                  />
+                ))}
+                {ongoingChallenges.length === 0 && (
+                  <EmptyState>No ongoing challenges. Start one above 🌱</EmptyState>
+                )}
+              </ChallengeList>
+            </SectionBlock>
+
+            {endedChallenges.length > 0 && (
+              <SectionBlock>
+                <SectionTitle>Ended</SectionTitle>
+                <ChallengeList>
+                  {endedChallenges.map((c) => (
+                    <ChallengeCard
+                      key={c.id}
+                      challenge={c}
+                      onToggleDay={handleToggleDay}
+                      onSetInstantStatus={handleSetInstantStatus}
+                      onEdit={handleEditChallenge}
+                      onDelete={handleDeleteChallenge}
+                    />
+                  ))}
+                </ChallengeList>
+              </SectionBlock>
+            )}
+          </>
         )}
       </Container>
     </PageWrapper>
   );
 }
 
+/* ============================================================
+   CREATE / EDIT FORM
+   ============================================================ */
 
 function ChallengeCreateForm({ editingChallenge, onCreate, onUpdate, onCancel }) {
   const isEditing = Boolean(editingChallenge);
@@ -935,12 +1146,8 @@ function ChallengeCreateForm({ editingChallenge, onCreate, onUpdate, onCancel })
       <ButtonRow>
         <SubmitButton type="submit" disabled={submitting}>
           {submitting
-            ? isEditing
-              ? 'Saving...'
-              : 'Creating...'
-            : isEditing
-            ? 'Save changes'
-            : 'Create challenge'}
+            ? isEditing ? 'Saving...' : 'Creating...'
+            : isEditing ? 'Save changes' : 'Create challenge'}
         </SubmitButton>
         <CancelButton type="button" onClick={onCancel}>
           Cancel
@@ -949,6 +1156,10 @@ function ChallengeCreateForm({ editingChallenge, onCreate, onUpdate, onCancel })
     </FormWrapper>
   );
 }
+
+/* ============================================================
+   CHALLENGE CARD
+   ============================================================ */
 
 function ChallengeCard({ challenge, onToggleDay, onSetInstantStatus, onEdit, onDelete }) {
   const [expanded, setExpanded] = useState(false);
@@ -962,12 +1173,15 @@ function ChallengeCard({ challenge, onToggleDay, onSetInstantStatus, onEdit, onD
       remaining: challenge.backendStats.remaining,
       currentStreak: challenge.backendStats.current_streak,
       longestStreak: challenge.backendStats.longest_streak,
+      completionPct: challenge.backendStats.completion_pct,
+      status: challenge.backendStats.status,
       days: generateDayRange(challenge.startDate, challenge.durationDays),
     };
   }, [challenge]);
 
-  const progressPct = stats ? Math.round((stats.completed / stats.totalDays) * 100) : 0;
+  const progressPct = stats?.completionPct ?? 0;
   const clickable = challenge.type === 'days';
+  const isEnded = challenge.type === 'days' && stats?.status === 'ended';
 
   function toggleExpanded() {
     if (clickable) setExpanded((v) => !v);
@@ -991,6 +1205,11 @@ function ChallengeCard({ challenge, onToggleDay, onSetInstantStatus, onEdit, onD
           <TitleRow>
             <CardTitle>{challenge.title}</CardTitle>
             <TypeBadge>{challenge.type === 'days' ? 'Days' : 'Instant'}</TypeBadge>
+            {stats && (
+              <StatusPill $tone={isEnded ? 'ended' : 'ongoing'}>
+                {isEnded ? 'Ended' : 'Ongoing'}
+              </StatusPill>
+            )}
           </TitleRow>
           <DateRange>
             {formatDisplayDate(challenge.startDate)} &rarr; {formatDisplayDate(challenge.endDate)}
@@ -1014,20 +1233,14 @@ function ChallengeCard({ challenge, onToggleDay, onSetInstantStatus, onEdit, onD
           <IconButton
             type="button"
             title="Edit challenge"
-            onClick={(e) => {
-              e.stopPropagation();
-              onEdit(challenge);
-            }}
+            onClick={(e) => { e.stopPropagation(); onEdit(challenge); }}
           >
             <Pencil size={14} />
           </IconButton>
           <IconButton
             type="button"
             title="Delete challenge"
-            onClick={(e) => {
-              e.stopPropagation();
-              onDelete(challenge.id);
-            }}
+            onClick={(e) => { e.stopPropagation(); onDelete(challenge.id); }}
           >
             <Trash2 size={14} />
           </IconButton>
@@ -1052,11 +1265,31 @@ function ChallengeCard({ challenge, onToggleDay, onSetInstantStatus, onEdit, onD
             log={challenge.log}
             onToggleDay={(iso) => onToggleDay(challenge.id, iso)}
           />
+
+          {isEnded && (
+            <ActionRow>
+              <EndedNotice>
+                <Award size={15} color={C.green} />
+                Finished at {stats.completionPct}% completion. Nice work!
+              </EndedNotice>
+              <BadgeButton
+                type="button"
+                onClick={() => downloadChallengeBadge(challenge, stats)}
+              >
+                <Award size={15} />
+                Download badge
+              </BadgeButton>
+            </ActionRow>
+          )}
         </CardBody>
       )}
     </CardWrapper>
   );
 }
+
+/* ============================================================
+   INSTANT CHALLENGE CONTROLS
+   ============================================================ */
 
 function InstantChallengeControls({ status, onChange }) {
   const options = [
@@ -1082,6 +1315,9 @@ function InstantChallengeControls({ status, onChange }) {
   );
 }
 
+/* ============================================================
+   REPORT STATS
+   ============================================================ */
 
 function ReportStats({ stats }) {
   const items = [
@@ -1089,6 +1325,7 @@ function ReportStats({ stats }) {
     { label: 'Missed', value: stats.missed },
     { label: 'Remaining', value: stats.remaining },
     { label: 'Best streak', value: stats.longestStreak },
+    { label: 'Complete', value: `${stats.completionPct}%` },
   ];
   return (
     <StatsGrid>
@@ -1102,6 +1339,9 @@ function ReportStats({ stats }) {
   );
 }
 
+/* ============================================================
+   DAYS GRID
+   ============================================================ */
 
 function DaysGrid({ days, log, onToggleDay }) {
   return (

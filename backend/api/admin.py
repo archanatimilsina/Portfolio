@@ -2,7 +2,7 @@ from django.contrib import admin
 from .models import (
     ProfessionalDevelopment, Project, AboutMe, DayLog, 
     ScrapbookStamp, OperativeNote, DreamWish, WatchlistItem, 
-    OperativeGoal,GoalDayStatus, HobbyItem, MusicVibeItem, Task
+    OperativeGoal,GoalDayStatus, HobbyItem, MusicVibeItem, Task,PDFDocument
 )
 
 
@@ -86,3 +86,9 @@ class MusicVibeItemAdmin(admin.ModelAdmin):
 class TaskAdmin(admin.ModelAdmin):
     list_display = ('text', 'due_date', 'completed', 'created_at','updated_at')
 
+
+@admin.register(PDFDocument)
+class PDFDocumentAdmin(admin.ModelAdmin):
+    list_display = ("title", "size", "uploaded_at", "updated_at")
+    search_fields = ("title",)
+    readonly_fields = ("size", "uploaded_at", "updated_at")

@@ -15,6 +15,7 @@ import ProfessionalDevPage from './ProfessionalDev';
 import MusicVibes from './music';
 import GestureDraw from './GestureDraw';
 import ChallengeTracker from "./Challengetracker";
+import PDFManager from "./PdfChecker";
 
 export const revalidate = 60;
 const C = {
@@ -115,20 +116,21 @@ const GlobalStyle = createGlobalStyle`
 `;
 
 const SECTIONS = [
-  { id:"gallery",          icon:"🐸",  label:"GalBoard",         group:"explore" },
-  { id:"dramalist",        icon:"🍀",  label:"Pearl Collection",      group:"explore" },
-  { id:"hobbies",          icon:"🐙",  label:"Hobi",         group:"explore" },
-  { id:"goals",            icon:"🐞",  label:"planni",           group:"life"    },
-  { id:"challenges",       icon:"🌠",  label:"challengi",           group:"life"    },
-  { id:"notes",            icon:"🎨",  label:"Noti",           group:"life"    },
-  { id:"wishlist",         icon:"🐳",  label:"Clover",       group:"life"    },
-  { id:"tellme",           icon:"🐣",  label:"miday",          group:"life"    },
-  { id:"todo",             icon:"☃️",  label:"action",           group:"life"    },
-  { id:"aboutme",          icon:"🐉",  label:"meupdate",        group:"life"    },
-  { id:"project",          icon:"🦏",  label:"poroject",         group:"life"    },
-  { id:"professionalDev",  icon:"🦜",  label:"cilas", group:"life"    },
-  { id:"music",            icon:"🐋",  label:"msc",           group:"life"    },
-  { id:"gestureDraw",      icon:"🦒",  label:"strokey",     group:"life"    },
+  { id:"gallery",          icon:"🐸",  label:"Gallery",         group:"explore" },
+  { id:"dramalist",        icon:"🍀",  label:"Drug Collection",      group:"explore" },
+  { id:"hobbies",          icon:"🐙",  label:"Hobbies",         group:"explore" },
+  { id:"goals",            icon:"🐞",  label:"Plan",           group:"life"    },
+  { id:"challenges",       icon:"🌠",  label:"Challenges",           group:"life"    },
+  { id:"notes",            icon:"🎨",  label:"Note",           group:"life"    },
+  { id:"wishlist",         icon:"🐳",  label:"Wish",       group:"life"    },
+  { id:"tellme",           icon:"🐣",  label:"My Day",          group:"life"    },
+  { id:"todo",             icon:"☃️",  label:"Todo",           group:"life"    },
+  { id:"aboutme",          icon:"🐉",  label:"Configuration",        group:"life"    },
+  { id:"project",          icon:"🦏",  label:"Project",         group:"life"    },
+  { id:"professionalDev",  icon:"🦜",  label:"Participation", group:"life"    },
+  { id:"music",            icon:"🐋",  label:"Music",           group:"life"    },
+  { id:"gestureDraw",      icon:"🦒",  label:"Gesture Drawing",     group:"life"    },
+  { id:"pdfchecker",      icon:"🫟",  label:"PDF Manager",     group:"life"    },
 ];
 
 
@@ -169,6 +171,7 @@ function SectionPage({ id, onBack }) {
   if (id === "music")           return <MusicVibes         onBack={onBack} />;
   if (id === "gestureDraw")           return <GestureDraw         onBack={onBack} />;
   if (id === "challenges")           return <ChallengeTracker      onBack={onBack} />;
+  if (id === "pdfchecker")           return <PDFManager      onBack={onBack} />;
 
   return (
     <PlaceholderWrap>

@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import ProjectDetailView,ChallengeListCreateAPIView, ChallengeMarkDayAPIView ,ChallengeInstantStatusAPIView ,  ChallengeRetrieveUpdateDestroyAPIView, ProfessionalDevelopmentListView, TaskRetrieveUpdateDestroyAPIView, TaskListCreateAPIView, projectListView, ProfessionalDevelopmentDetailView, AboutMeListCreateView, AboutMeRetrieveUpdateDestroyView, DayLogListCreateView, DayLogDetailView, ScrapbookArchiveAPIView, ScrapbookStampDetailAPIView, NoteListCreateAPIView, NoteRetrieveUpdateDestroyAPIView, DreamWishListCreateAPIView, DreamWishDetailAPIView, WatchlistItemListCreateAPIView, WatchlistItemRetrieveUpdateDestroyAPIView, GoalListCreateAPIView, GoalRetrieveUpdateDestroyAPIView, GoalDayToggleAPIView, VerifySecretView, HobbyListCreateAPIView, HobbyRetrieveUpdateDestroyAPIView, MusicVibeListCreateAPIView, MusicVibeRetrieveUpdateDestroyAPIView
+from .views import ProjectDetailView,ChallengeListCreateAPIView ,PDFListCreateView, PDFDetailView, PDFDownloadView,ChallengeMarkDayAPIView ,ChallengeInstantStatusAPIView ,  ChallengeRetrieveUpdateDestroyAPIView, ProfessionalDevelopmentListView, TaskRetrieveUpdateDestroyAPIView, TaskListCreateAPIView, projectListView, ProfessionalDevelopmentDetailView, AboutMeListCreateView, AboutMeRetrieveUpdateDestroyView, DayLogListCreateView, DayLogDetailView, ScrapbookArchiveAPIView, ScrapbookStampDetailAPIView, NoteListCreateAPIView, NoteRetrieveUpdateDestroyAPIView, DreamWishListCreateAPIView, DreamWishDetailAPIView, WatchlistItemListCreateAPIView, WatchlistItemRetrieveUpdateDestroyAPIView, GoalListCreateAPIView, GoalRetrieveUpdateDestroyAPIView, GoalDayToggleAPIView, VerifySecretView, HobbyListCreateAPIView, HobbyRetrieveUpdateDestroyAPIView, MusicVibeListCreateAPIView, MusicVibeRetrieveUpdateDestroyAPIView
 
 urlpatterns = [
     path('projectListView/',projectListView.as_view() ),
@@ -32,6 +32,10 @@ urlpatterns = [
     path('challenges/<int:pk>/', ChallengeRetrieveUpdateDestroyAPIView.as_view(), name='challenge-detail'),
     path('challenges/<int:pk>/mark-day/', ChallengeMarkDayAPIView.as_view(), name='challenge-mark-day'),
     path('challenges/<int:pk>/instant-status/', ChallengeInstantStatusAPIView.as_view(), name='challenge-instant-status'),
+    path("pdfs/", PDFListCreateView.as_view(), name="pdf-list-create"),
+    path("pdfs/<uuid:id>/", PDFDetailView.as_view(), name="pdf-detail"),
+    path("pdfs/<uuid:id>/download/", PDFDownloadView.as_view(), name="pdf-download"),
+
 ]
 
 

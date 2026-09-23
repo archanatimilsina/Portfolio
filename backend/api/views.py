@@ -1,14 +1,15 @@
 from django.shortcuts import render
 from rest_framework import generics, status
-from .models import Challenge, ChallengeDay, ProfessionalDevelopment, Project, AboutMe, DayLog, OperativeGoal, GoalDayStatus, ScrapbookStamp, OperativeNote, DreamWish, WatchlistItem, HobbyItem, MusicVibeItem, Task
-from .serializers import ChallengeSerializer, InstantStatusSerializer, ProfessionalDevelopmentSerializer, ProjectSerializer, DreamWishSerializer, HobbyItemSerializer, MusicVibeItemSerializer, TaskSerializer, AboutMeSerializer, DayLogSerializer, OperativeNoteSerializer, ScrapbookStampSerializer, DreamWishSerializer, WatchlistItemSerializer, OperativeGoalSerializer
+from .models import Challenge, ChallengeDay, PDFDocument, ProfessionalDevelopment, Project, AboutMe, DayLog, OperativeGoal, GoalDayStatus, ScrapbookStamp, OperativeNote, DreamWish, WatchlistItem, HobbyItem, MusicVibeItem, Task
+from .serializers import ChallengeSerializer,PDFDocumentSerializer, InstantStatusSerializer, ProfessionalDevelopmentSerializer, ProjectSerializer, DreamWishSerializer, HobbyItemSerializer, MusicVibeItemSerializer, TaskSerializer, AboutMeSerializer, DayLogSerializer, OperativeNoteSerializer, ScrapbookStampSerializer, DreamWishSerializer, WatchlistItemSerializer, OperativeGoalSerializer
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser 
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
-from rest_framework import status
 from rest_framework.decorators import action
+from django.http import HttpResponse, Http404
+
 
 class projectListView(generics.ListCreateAPIView):
     queryset = Project.objects.all()
@@ -161,16 +162,6 @@ class VerifySecretView(APIView):
             allowed = False
             
         return Response({'allowed': allowed})
-    
-from django.shortcuts import get_object_or_404
-from django.utils import timezone
-from rest_framework import generics, status
-from rest_framework.views import APIView
-from rest_framework.response import Response
-
-from .models import Challenge, ChallengeDay
-from .serializers import ChallengeSerializer, InstantStatusSerializer
-
 
 class ChallengeListCreateAPIView(generics.ListCreateAPIView):
     queryset = Challenge.objects.all()
@@ -230,3 +221,40 @@ class ChallengeInstantStatusAPIView(APIView):
         challenge.save(update_fields=['instant_status'])
 
         return Response(ChallengeSerializer(challenge).data)
+
+
+def _storage_bytes(file_field):
+    storage = file_field.storage
+    return storage.client.storage.from_(storage.bucket_name).download(file_field.name)
+
+
+class PDFListCreateView(generics.ListCreateAPIView):
+    queryset = PDFDocument.objects.all()
+    serializer_class = PDFDocumentSerializer
+
+    def get_serializer_context(self):
+        return {"request": self.request}
+
+
+class PDFDetailView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = PDFDocument.objects.all()
+    serializer_class = PDFDocumentSerializer
+    lookup_field = "id"
+
+    def get_serializer_context(self):
+        return {"request": self.request}
+
+
+class PDFDownloadView(APIView):
+    def get(self, request, id):
+        doc = get_object_or_404(PDFDocument, id=id)
+
+        try:
+            data = _storage_bytes(doc.file)
+        except Exception:
+            raise Http404("File not found in storage.")
+
+        filename = doc.file.name.split("/")[-1]
+        response = HttpResponse(data, content_type="application/pdf")
+        response["Content-Disposition"] = f'attachment; filename="{filename}"'
+        return response

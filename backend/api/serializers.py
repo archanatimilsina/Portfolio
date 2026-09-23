@@ -1,9 +1,10 @@
 from rest_framework import serializers
-from .models import Challenge, ChallengeDay,ProfessionalDevelopment, Project, AboutMe, DayLog, Task, ScrapbookStamp,OperativeNote, DreamWish, WatchlistItem, OperativeGoal,  HobbyItem, MusicVibeItem
+from .models import Challenge, ChallengeDay,ProfessionalDevelopment, Project, AboutMe, DayLog, Task, ScrapbookStamp,OperativeNote, DreamWish, WatchlistItem, OperativeGoal,  HobbyItem, MusicVibeItem, PDFDocument
 import requests
 from django.core.files.base import ContentFile
 from urllib.parse import urlparse
 from datetime import timedelta
+from rest_framework import serializers
 
 
  
@@ -343,3 +344,46 @@ class ChallengeSerializer(serializers.ModelSerializer):
 
 class InstantStatusSerializer(serializers.Serializer):
     instant_status = serializers.ChoiceField(choices=Challenge.InstantStatus.choices)
+
+
+
+class PDFDocumentSerializer(serializers.ModelSerializer):
+    file_url = serializers.SerializerMethodField()
+    download_url = serializers.SerializerMethodField()
+    size_kb = serializers.SerializerMethodField()
+
+    class Meta:
+        model = PDFDocument
+        fields = [
+            "id",
+            "title",
+            "file",
+            "file_url",
+            "download_url",
+            "size",
+            "size_kb",
+            "uploaded_at",
+            "updated_at",
+        ]
+        read_only_fields = ["id", "size", "uploaded_at", "updated_at"]
+        extra_kwargs = {"file": {"write_only": True}}
+
+    def get_file_url(self, obj):
+        request = self.context.get("request")
+        if obj.file and request:
+            return request.build_absolute_uri(obj.file.url)
+        return None
+
+    def get_download_url(self, obj):
+        request = self.context.get("request")
+        if request:
+            return request.build_absolute_uri(f"/api/pdfs/{obj.id}/download/")
+        return None
+
+    def get_size_kb(self, obj):
+        return round(obj.size / 1024, 2) if obj.size else None
+
+    def validate_file(self, value):
+        if not value.name.lower().endswith(".pdf"):
+            raise serializers.ValidationError("Only PDF files are allowed.")
+        return value

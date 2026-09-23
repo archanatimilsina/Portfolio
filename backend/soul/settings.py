@@ -34,18 +34,25 @@ SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY')
 DEBUG = False
 
 ALLOWED_HOSTS = [
-    'https://portfolio-79vi.onrender.com',
+    'portfolio-79vi.onrender.com',
     'archana-timilsina.com.np',
     'www.archana-timilsina.com.np',
-    'portfolio-79vi.onrender.com',
-    'http://localhost:8000'
+    'localhost',
+    '127.0.0.1',
 ]
 
 CORS_ALLOWED_ORIGINS = [
-    "https://portfolio-mtv31atuo-archanatimilsinas-projects.vercel.app",        
-    "https://archana-timilsina.com.np",   
+    "https://archana-timilsina.com.np",
+    "https://www.archana-timilsina.com.np",
     "http://localhost:5173",
     "http://localhost:3000",
+]
+
+# Vercel preview deployments get a new URL on every push, so match them
+# with a regex instead of hardcoding one hash.
+CORS_ALLOWED_ORIGIN_REGEXES = [
+    r"^https://[a-z0-9-]*-archanatimilsinas-projects\.vercel\.app$",
+    r"^https://portfolio-[a-z0-9-]+\.vercel\.app$",
 ]
 
 INSTALLED_APPS = [
