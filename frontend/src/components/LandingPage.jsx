@@ -1,6 +1,7 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useSyncExternalStore } from 'react';
 import styled, { createGlobalStyle, keyframes } from 'styled-components';
 import charImg from '../assets/img/397192bdf6375902aaab9436359d2dc0.jpg';
+import { getGestureNavStatus, setGestureNavStatus, subscribeGestureNav } from '../js/gestureNavState';
 
 import ProjectSpecificationPage from './projectDescriptionPage';
 import ProfessionalCredential from './ProfessionalCredential';
@@ -34,10 +35,9 @@ const PD_EMOJI = {
 
 const verifySecret = async (field, value) => {
   try {
-    const res = await fetch(`${BASE}/verify-secret/`, {
+    const res = await fetchWithRetry(`${BASE}/verify-secret/`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      next: { revalidate: 60 } ,
       body: JSON.stringify({ field, value })
     });
     const data = await res.json();
@@ -46,6 +46,56 @@ const verifySecret = async (field, value) => {
     return false;
   }
 };
+
+// Render's free tier sleeps after ~15 min idle and the first request then
+// takes 30-60s to boot. Retry once a connection is reset, and allow a long
+// timeout so a cold start still succeeds instead of showing a partial page.
+const COLD_START_TIMEOUT = 90_000;
+
+async function fetchWithRetry(url, options = {}, attempts = 2) {
+  let lastErr;
+  for (let i = 0; i < attempts; i++) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), COLD_START_TIMEOUT);
+    try {
+      const res = await fetch(url, { ...options, signal: controller.signal });
+      clearTimeout(timer);
+      if (!res.ok && res.status >= 500 && i < attempts - 1) {
+        lastErr = new Error(`Server error ${res.status}`);
+        continue;
+      }
+      return res;
+    } catch (err) {
+      clearTimeout(timer);
+      lastErr = err;
+    }
+  }
+  throw lastErr || new Error('Request failed');
+}
+
+// Cache list payloads so returning visitors see content instantly while a
+// cold backend wakes up in the background.
+const CACHE_TTL = 5 * 60 * 1000;
+const cacheKey = (endpoint) => `api-cache:${endpoint}`;
+
+function readCache(endpoint) {
+  try {
+    const raw = sessionStorage.getItem(cacheKey(endpoint));
+    if (!raw) return null;
+    const { t, data } = JSON.parse(raw);
+    return Date.now() - t > CACHE_TTL ? null : data;
+  } catch {
+    return null;
+  }
+}
+
+function writeCache(endpoint, data) {
+  try {
+    sessionStorage.setItem(cacheKey(endpoint), JSON.stringify({ t: Date.now(), data }));
+  } catch {
+    /* storage unavailable — ignore */
+  }
+}
 
 
 function GestureNavModal({ onClose, onConfirm, currentStatus }) {
@@ -64,16 +114,16 @@ function GestureNavModal({ onClose, onConfirm, currentStatus }) {
 
   return (
     <ModalOverlay onClick={handleOverlayClick}>
-      <ModalBox ref={modalRef}>
+      <ModalBox ref={modalRef} role="dialog" aria-modal="true" aria-label="Gesture Navigation">
         <ModalCloseBtn onClick={onClose}>✕</ModalCloseBtn>
         <ModalIconWrap>👆</ModalIconWrap>
         <ModalTitle>Gesture Navigation</ModalTitle>
         <ModalDesc>
-          Draw gestures on screen to navigate — no clicks, no scrolling. Triple-tap anywhere to activate the drawing canvas.
+          Draw gestures on screen to navigate — no clicks, no scrolling. Turn it on here, then triple-tap anywhere to open the drawing canvas.
         </ModalDesc>
 
         <ModalHowTo>
-          <strong>How to use:</strong> triple-tap (touch / trackpad / mouse) anywhere on the page. A canvas appears — draw your gesture. Pause for a moment and it navigates automatically. Press <strong>Esc</strong> to cancel.
+          <strong>How to use:</strong> turn Gesture Nav on, then triple-tap (touch / trackpad / mouse) anywhere on the page. A canvas appears — draw your gesture. Pause for a moment and it navigates automatically. Triple-tap again or press <strong>Esc</strong> to cancel.
         </ModalHowTo>
 
         <ModalCurrentStatus $active={isActive}>
@@ -162,17 +212,22 @@ function SecretGate({ onBack, onUnlock }) {
 
 
 function useApiList(endpoint) {
-  const [data,    setData]    = useState([]);
-  const [loading, setLoading] = useState(true);
+  const cached = readCache(endpoint);
+  const [data,    setData]    = useState(cached || []);
+  const [loading, setLoading] = useState(!cached);
   const [error,   setError]   = useState(null);
 
   const load = async () => {
-    setLoading(true); setError(null);
+    // Only show the blocking spinner when we have nothing cached to display.
+    if (!readCache(endpoint)) setLoading(true);
+    setError(null);
     try {
-      const res = await fetch(`${BASE}${endpoint}`,{next: { revalidate: 60 } });
+      const res = await fetchWithRetry(`${BASE}${endpoint}`);
       if (!res.ok) throw new Error(`Server error ${res.status}`);
       const json = await res.json();
-      setData(Array.isArray(json) ? json : json.results || []);
+      const list = Array.isArray(json) ? json : json.results || [];
+      setData(list);
+      writeCache(endpoint, list);
     } catch (err) {
       setError(err.message || 'Failed to load data.');
     } finally {
@@ -283,8 +338,12 @@ export default function PortfolioLanding() {
   const [showSecretGate,   setShowSecretGate]   = useState(false);
   const [showSecretWorld,  setShowSecretWorld]  = useState(false);
 
-  const [gestureNavStatus, setGestureNavStatus] = useState(
-    () => localStorage.getItem('gestureNav') || 'inactive'
+  // The enable flag is the single source of truth shared with the global
+  // <GestureNavigator />, which is what actually listens for triple-taps.
+  const gestureNavStatus = useSyncExternalStore(
+    subscribeGestureNav,
+    getGestureNavStatus,
+    getGestureNavStatus
   );
   const gestureEnabled = gestureNavStatus === 'active';
 
@@ -310,7 +369,6 @@ useEffect(() => {
   const clearActive = () => setActiveItem(null);
 
   const handleGestureConfirm = (choice) => {
-    localStorage.setItem('gestureNav', choice);
     setGestureNavStatus(choice);
     setShowGestureModal(false);
   };

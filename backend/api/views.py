@@ -1,4 +1,5 @@
 from django.shortcuts import render
+from django.db import connection
 from rest_framework import generics, status
 from .models import Challenge, ChallengeDay, PDFDocument, ProfessionalDevelopment, Project, AboutMe, DayLog, OperativeGoal, GoalDayStatus, ScrapbookStamp, OperativeNote, DreamWish, WatchlistItem, HobbyItem, MusicVibeItem, Task
 from .serializers import ChallengeSerializer,PDFDocumentSerializer, InstantStatusSerializer, ProfessionalDevelopmentSerializer, ProjectSerializer, DreamWishSerializer, HobbyItemSerializer, MusicVibeItemSerializer, TaskSerializer, AboutMeSerializer, DayLogSerializer, OperativeNoteSerializer, ScrapbookStampSerializer, DreamWishSerializer, WatchlistItemSerializer, OperativeGoalSerializer
@@ -9,6 +10,32 @@ from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from rest_framework.decorators import action
 from django.http import HttpResponse, Http404
+
+
+class HealthView(APIView):
+    """Lightweight liveness/readiness probe.
+
+    Point external uptime monitors (UptimeRobot, cron-job.org, etc.) at this
+    endpoint every 5 minutes. It also opens a DB connection so a warm request
+    actually warms the database path, not just the web process.
+    """
+
+    authentication_classes = []
+    permission_classes = []
+
+    def get(self, request):
+        db_ok = True
+        try:
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT 1")
+                cursor.fetchone()
+        except Exception:
+            db_ok = False
+
+        return Response(
+            {"status": "ok" if db_ok else "degraded", "db": db_ok},
+            status=status.HTTP_200_OK if db_ok else status.HTTP_503_SERVICE_UNAVAILABLE,
+        )
 
 
 class projectListView(generics.ListCreateAPIView):

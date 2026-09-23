@@ -165,10 +165,16 @@ const styles = `
   .arc-img-box {
     position: relative;
     overflow: hidden;
-    border-radius: 1px;
+    border-radius: 6px;
     background: var(--accent);
     margin-bottom: 1.1rem;
     min-height: 120px;
+    display: block;
+    width: 100%;
+    padding: 0;
+    border: none;
+    font: inherit;
+    cursor: zoom-in;
   }
   .arc-img-box img {
     width: 100%;
@@ -178,42 +184,55 @@ const styles = `
   }
   .arc-card-wrap:hover .arc-img-box img { transform: scale(1.08); }
 
-  /* FIX: pointer-events so overlay buttons are always clickable */
-  .arc-hover-overlay {
+  /* ── CARD IMAGE AFFORDANCE ── */
+  .arc-img-hint {
     position: absolute;
-    inset: 0;
-    background: rgba(15, 23, 42, 0.42);
-    backdrop-filter: blur(4px);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 1rem;
-    opacity: 0;
-    transition: opacity 0.3s ease;
-    pointer-events: none;
+    left: 50%; top: 50%;
+    transform: translate(-50%, -50%) scale(0.9);
+    display: inline-flex; align-items: center; gap: 0.35rem;
+    background: rgba(255,255,255,0.94); color: var(--dark);
+    padding: 0.5rem 0.95rem; border-radius: 50px;
+    font-family: 'Syne', sans-serif; font-size: 0.68rem; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 1.2px;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.25s ease, transform 0.25s ease;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.22);
   }
-  .arc-card-wrap:hover .arc-hover-overlay {
+  .arc-img-box:hover .arc-img-hint {
     opacity: 1;
-    pointer-events: all;
+    transform: translate(-50%, -50%) scale(1);
   }
 
-  .arc-ov-btn {
-    font-family: 'Syne', sans-serif;
-    font-size: 0.72rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    padding: 0.55rem 1.1rem;
-    border-radius: 50px;
-    border: none;
-    background: var(--white);
-    cursor: pointer;
-    transition: transform 0.18s ease;
+  .arc-img-empty {
+    height: 140px;
+    display: flex; align-items: center; justify-content: center;
+    color: #b0a898; font-size: 0.8rem; font-family: monospace;
   }
-  .arc-ov-btn:hover { transform: scale(1.08); }
-  .arc-ov-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-  .arc-ov-btn.edit   { color: var(--dark); }
-  .arc-ov-btn.danger { color: var(--danger); }
+
+  /* ── CARD ACTIONS (below the image) ── */
+  .arc-card-actions {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.5rem;
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid #ece7df;
+  }
+  .arc-abtn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 0.32rem;
+    font-family: 'Syne', sans-serif; font-size: 0.66rem; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.6px;
+    padding: 0.55rem 0.4rem; border-radius: 8px; cursor: pointer;
+    border: 1.5px solid var(--border); background: var(--white); color: var(--dark);
+    transition: all 0.18s ease;
+  }
+  .arc-abtn:hover { transform: translateY(-1px); border-color: var(--dark); }
+  .arc-abtn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+  .arc-abtn.preview { background: var(--dark); border-color: var(--dark); color: var(--white); }
+  .arc-abtn.preview:hover { background: var(--green); border-color: var(--green); }
+  .arc-abtn.danger { color: var(--danger); }
+  .arc-abtn.danger:hover { border-color: var(--danger); background: #fff5f5; }
+  @media (max-width: 360px) { .arc-abtn { font-size: 0.6rem; letter-spacing: 0; } }
 
   .arc-card-stamp { font-family: monospace; font-size: 0.68rem; color: #b0a898; margin-bottom: 0.22rem; }
   .arc-card-title { font-family: 'Syne', sans-serif; font-size: 0.96rem; font-weight: 700; color: var(--dark); line-height: 1.35; }
@@ -385,6 +404,85 @@ const styles = `
   .arc-toast.ok  { background: #f0fdf9; border: 1.5px solid #a7f3d0; color: #065f46; }
   .arc-toast.err { background: #fff5f5; border: 1.5px solid #fecaca; color: var(--danger); }
 
+  /* ── LIGHTBOX (full-page preview) ── */
+  .arc-lb {
+    position: fixed; inset: 0; z-index: 1100;
+    display: flex; flex-direction: column;
+    background: rgba(9, 12, 20, 0.95);
+    backdrop-filter: blur(16px);
+    animation: arcOverlayIn 0.28s ease;
+  }
+  .arc-lb-bar {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 1rem; padding: 1.1rem 1.4rem;
+    background: linear-gradient(rgba(9,12,20,0.75), rgba(9,12,20,0));
+  }
+  .arc-lb-meta { min-width: 0; }
+  .arc-lb-title {
+    font-family: 'Syne', sans-serif; font-weight: 700; font-size: 1.02rem;
+    color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .arc-lb-sub {
+    font-family: monospace; font-size: 0.72rem;
+    color: rgba(255,255,255,0.5); margin-top: 0.15rem;
+  }
+  .arc-lb-actions { display: flex; gap: 0.55rem; flex-shrink: 0; }
+  .arc-lb-btn {
+    display: inline-flex; align-items: center; gap: 0.4rem;
+    font-family: 'Syne', sans-serif; font-size: 0.72rem; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 1px;
+    padding: 0.6rem 1rem; border-radius: 50px; cursor: pointer;
+    background: rgba(255,255,255,0.08); color: #fff;
+    border: 1px solid rgba(255,255,255,0.18);
+    transition: all 0.18s ease;
+  }
+  .arc-lb-btn:hover { background: rgba(255,255,255,0.18); transform: translateY(-1px); }
+  .arc-lb-btn:disabled { opacity: 0.55; cursor: not-allowed; transform: none; }
+  .arc-lb-btn.primary { background: var(--green); border-color: var(--green); }
+  .arc-lb-btn.primary:hover { background: var(--green-dim); border-color: var(--green-dim); }
+
+  .arc-lb-stage {
+    flex: 1; min-height: 0; position: relative;
+    display: flex; align-items: center; justify-content: center;
+    padding: 0 4.5rem 0.5rem;
+  }
+  .arc-lb-stage img {
+    max-width: 100%; max-height: 100%;
+    object-fit: contain; border-radius: 8px;
+    box-shadow: 0 30px 80px rgba(0,0,0,0.6);
+    opacity: 0; transition: opacity 0.4s ease;
+  }
+  .arc-lb-stage img.is-loaded { opacity: 1; }
+  .arc-lb-status {
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    color: rgba(255,255,255,0.85); font-size: 0.9rem; pointer-events: none;
+  }
+  .arc-spin-lg { width: 34px; height: 34px; border-width: 3px; color: var(--green); }
+  .arc-lb-nav {
+    position: absolute; top: 50%; transform: translateY(-50%);
+    width: 48px; height: 48px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(255,255,255,0.1); color: #fff;
+    border: 1px solid rgba(255,255,255,0.2); cursor: pointer;
+    backdrop-filter: blur(6px); transition: all 0.18s ease;
+  }
+  .arc-lb-nav:hover { background: rgba(255,255,255,0.22); transform: translateY(-50%) scale(1.06); }
+  .arc-lb-nav.prev { left: 1.1rem; }
+  .arc-lb-nav.next { right: 1.1rem; }
+  .arc-lb-caption {
+    text-align: center; font-size: 0.78rem; color: rgba(255,255,255,0.45);
+    padding: 0.75rem 1rem 1.4rem;
+  }
+  @media (max-width: 620px) {
+    .arc-lb-bar { padding: 0.9rem 1rem; }
+    .arc-lb-btn-txt { display: none; }
+    .arc-lb-stage { padding: 0 1rem 0.5rem; }
+    .arc-lb-nav { width: 40px; height: 40px; }
+    .arc-lb-nav.prev { left: 0.5rem; }
+    .arc-lb-nav.next { right: 0.5rem; }
+  }
+
   /* ── KEYFRAMES ── */
   @keyframes arcFadeUp {
     from { opacity: 0; transform: translateY(20px); }
@@ -427,8 +525,33 @@ const fmtDate = (iso) =>
     month: 'short', day: 'numeric', year: 'numeric',
   });
 
+const slugify = (s) =>
+  (s || '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 60);
 
-function MemoryCard({ stamp, onEdit, onDelete, deleting }) {
+/* ── tiny inline icons (stroke = currentColor) ── */
+const SvgIcon = ({ children, size = 15, ...rest }) => (
+  <svg
+    width={size} height={size} viewBox="0 0 24 24" fill="none"
+    stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+    aria-hidden="true" {...rest}
+  >
+    {children}
+  </svg>
+);
+const EyeIcon      = (p) => <SvgIcon {...p}><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z" /><circle cx="12" cy="12" r="3" /></SvgIcon>;
+const PenIcon      = (p) => <SvgIcon {...p}><path d="M12 20h9" /><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" /></SvgIcon>;
+const TrashIcon    = (p) => <SvgIcon {...p}><path d="M3 6h18" /><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" /><path d="M10 11v6M14 11v6" /></SvgIcon>;
+const DownloadIcon = (p) => <SvgIcon {...p}><path d="M21 15v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-3" /><path d="m7 10 5 5 5-5" /><path d="M12 15V3" /></SvgIcon>;
+const XIcon        = (p) => <SvgIcon {...p}><path d="M18 6 6 18M6 6l12 12" /></SvgIcon>;
+const ChevronLeft  = (p) => <SvgIcon {...p}><path d="m15 18-6-6 6-6" /></SvgIcon>;
+const ChevronRight = (p) => <SvgIcon {...p}><path d="m9 18 6-6-6-6" /></SvgIcon>;
+
+
+function MemoryCard({ stamp, onEdit, onDelete, onPreview, deleting }) {
   const tilt    = React.useMemo(() => (((stamp.id * 7919) % 100) / 100 - 0.5) * 6, [stamp.id]);
   const tapePos = stamp.id % 2 === 0 ? 'left' : 'right';
 
@@ -439,41 +562,145 @@ function MemoryCard({ stamp, onEdit, onDelete, deleting }) {
     >
       <article className="arc-polaroid">
         <div className={`arc-tape ${tapePos}`} />
-        <div className="arc-img-box">
+        <button
+          type="button"
+          className="arc-img-box"
+          onClick={() => onPreview(stamp)}
+          aria-label={`Preview ${stamp.title}`}
+        >
           {stamp.image ? (
             <img src={stamp.image} alt={stamp.title} loading="lazy" />
           ) : (
            
-            <div style={{
-              height: '140px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: '#b0a898',
-              fontSize: '0.8rem',
-              fontFamily: 'monospace',
-            }}>
-              no image
-            </div>
+            <span className="arc-img-empty">no image</span>
           )}
-          <div className="arc-hover-overlay">
-            <button className="arc-ov-btn edit" onClick={() => onEdit(stamp)}>
-              Edit
-            </button>
-            <button
-              className="arc-ov-btn danger"
-              disabled={deleting}
-              onClick={() => onDelete(stamp.id)}
-            >
-              {deleting ? <span className="arc-spin" /> : 'Delete'}
-            </button>
-          </div>
-        </div>
+          <span className="arc-img-hint">
+            <EyeIcon size={15} /> Preview
+          </span>
+        </button>
         <footer>
           <p className="arc-card-stamp">#{stamp.id} · {fmtDate(stamp.timestamp)}</p>
           <p className="arc-card-title">{stamp.title}</p>
         </footer>
+        <div className="arc-card-actions">
+          <button type="button" className="arc-abtn preview" onClick={() => onPreview(stamp)}>
+            <EyeIcon size={14} /> Preview
+          </button>
+          <button type="button" className="arc-abtn edit" onClick={() => onEdit(stamp)}>
+            <PenIcon size={14} /> Edit
+          </button>
+          <button
+            type="button"
+            className="arc-abtn danger"
+            disabled={deleting}
+            onClick={() => onDelete(stamp.id)}
+          >
+            {deleting ? <span className="arc-spin" /> : <TrashIcon size={14} />} Delete
+          </button>
+        </div>
       </article>
+    </div>
+  );
+}
+
+function Lightbox({ stamps, index, onClose, onPrev, onNext, onDownload, downloadingId }) {
+  const stamp = stamps[index];
+  const [imgState, setImgState] = useState({ src: null, status: 'loading' });
+
+  // Status belongs to the image it was measured for, so a newly shown image
+  // derives back to "loading" during render — no effect or extra render.
+  const status = imgState.src === stamp?.image ? imgState.status : 'loading';
+  const loaded = status === 'loaded';
+  const failed = status === 'failed';
+
+  useEffect(() => {
+    const onKey = (e) => {
+      if (e.key === 'Escape') onClose();
+      else if (e.key === 'ArrowLeft') onPrev();
+      else if (e.key === 'ArrowRight') onNext();
+    };
+    window.addEventListener('keydown', onKey);
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [onClose, onPrev, onNext]);
+
+  if (!stamp) return null;
+  const downloading = downloadingId === stamp.id;
+
+  return (
+    <div
+      className="arc-lb"
+      role="dialog"
+      aria-modal="true"
+      aria-label={`Preview ${stamp.title}`}
+    >
+      <div className="arc-lb-bar">
+        <div className="arc-lb-meta">
+          <p className="arc-lb-title">{stamp.title}</p>
+          <p className="arc-lb-sub">
+            #{stamp.id} · {fmtDate(stamp.timestamp)} · {index + 1} / {stamps.length}
+          </p>
+        </div>
+        <div className="arc-lb-actions">
+          <button
+            type="button"
+            className="arc-lb-btn primary"
+            onClick={() => onDownload(stamp)}
+            disabled={downloading}
+          >
+            {downloading ? <span className="arc-spin" /> : <DownloadIcon size={15} />}
+            Download
+          </button>
+          <button
+            type="button"
+            className="arc-lb-btn"
+            onClick={onClose}
+            aria-label="Close preview"
+          >
+            <XIcon size={16} /> <span className="arc-lb-btn-txt">Close</span>
+          </button>
+        </div>
+      </div>
+
+      <div className="arc-lb-stage" onClick={onClose}>
+        {stamp.image && !failed && (
+          <img
+            key={stamp.image}
+            src={stamp.image}
+            alt={stamp.title}
+            className={loaded ? 'is-loaded' : ''}
+            onLoad={() => setImgState({ src: stamp.image, status: 'loaded' })}
+            onError={() => setImgState({ src: stamp.image, status: 'failed' })}
+            onClick={(e) => e.stopPropagation()}
+          />
+        )}
+        {status !== 'loaded' && (
+          <div className="arc-lb-status">
+            {failed
+              ? '⚠ This image could not be loaded'
+              : <span className="arc-spin arc-spin-lg" />}
+          </div>
+        )}
+      </div>
+
+      {stamps.length > 1 && (
+        <>
+          <button type="button" className="arc-lb-nav prev" onClick={onPrev} aria-label="Previous image">
+            <ChevronLeft size={22} />
+          </button>
+          <button type="button" className="arc-lb-nav next" onClick={onNext} aria-label="Next image">
+            <ChevronRight size={22} />
+          </button>
+        </>
+      )}
+
+      <p className="arc-lb-caption">
+        Click the backdrop, press Esc, or use ← → to move between images
+      </p>
     </div>
   );
 }
@@ -499,6 +726,9 @@ export default function PersonalArchivePage() {
 
   const [deletingId, setDeletingId] = useState(null);
   const [toasts,     setToasts]     = useState([]);
+
+  const [previewIndex,  setPreviewIndex]  = useState(null);
+  const [downloadingId, setDownloadingId] = useState(null);
 
   const fileRef = useRef(null);
 
@@ -689,6 +919,53 @@ export default function PersonalArchivePage() {
 
   const submitBtnClass = editing ? 'submit-edit' : 'submit-create';
 
+  /* ── full-page preview ── */
+  const openPreview = useCallback((stamp) => {
+    setPreviewIndex(stamps.findIndex((s) => s.id === stamp.id));
+  }, [stamps]);
+  const closePreview = useCallback(() => setPreviewIndex(null), []);
+  const prevPreview  = useCallback(() => {
+    setPreviewIndex((i) => (i === null ? null : (i - 1 + stamps.length) % stamps.length));
+  }, [stamps.length]);
+  const nextPreview  = useCallback(() => {
+    setPreviewIndex((i) => (i === null ? null : (i + 1) % stamps.length));
+  }, [stamps.length]);
+
+  /* ── download the full-resolution image ── */
+  const downloadImage = useCallback(async (stamp) => {
+    if (!stamp?.image) return;
+    setDownloadingId(stamp.id);
+    const base = slugify(stamp.title) || `memory-${stamp.id}`;
+    try {
+      const res = await fetch(stamp.image, { mode: 'cors' });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const blob = await res.blob();
+      const ext = ((blob.type.split('/')[1] || 'jpg').split('+')[0]).replace('jpeg', 'jpg');
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${base}.${ext}`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1500);
+      toast('Download started ✓');
+    } catch {
+      // Cross-origin storage may block fetch — fall back to a new tab.
+      const a = document.createElement('a');
+      a.href = stamp.image;
+      a.download = base;
+      a.target = '_blank';
+      a.rel = 'noopener';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      toast('Opened in a new tab — save it from there', true);
+    } finally {
+      setDownloadingId(null);
+    }
+  }, [toast]);
+
   return (
     <>
       <style>{styles}</style>
@@ -740,6 +1017,7 @@ export default function PersonalArchivePage() {
                 stamp={stamp}
                 onEdit={openEdit}
                 onDelete={handleDelete}
+                onPreview={openPreview}
                 deleting={deletingId === stamp.id}
               />
             ))}
@@ -880,6 +1158,18 @@ export default function PersonalArchivePage() {
             </form>
           </div>
         </>
+      )}
+
+      {previewIndex !== null && stamps[previewIndex] && (
+        <Lightbox
+          stamps={stamps}
+          index={previewIndex}
+          onClose={closePreview}
+          onPrev={prevPreview}
+          onNext={nextPreview}
+          onDownload={downloadImage}
+          downloadingId={downloadingId}
+        />
       )}
 
       <div className="arc-toast-wrap">

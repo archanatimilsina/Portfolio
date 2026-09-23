@@ -1,8 +1,48 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import styled, { createGlobalStyle, keyframes, css } from 'styled-components';
+import { exportNotePdf } from '../../js/noteMarkdownPdf';
 
 const API_BASE = import.meta.env.VITE_API_URL;
 const ENDPOINT = `${API_BASE}/api/node-matrix/`;
+
+// Render's free tier sleeps after ~15 min idle, so the first DELETE can take
+// 30-60s to boot or be reset mid-flight. Retry once and allow a long timeout
+// instead of reporting a failure the user can't act on.
+const DELETE_TIMEOUT = 90_000;
+
+async function deleteNote(url, attempts = 2) {
+  let lastErr;
+  for (let i = 0; i < attempts; i++) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), DELETE_TIMEOUT);
+    try {
+      const res = await fetch(url, { method: 'DELETE', cache: 'no-store', signal: controller.signal });
+      clearTimeout(timer);
+      if (!res.ok && res.status >= 500 && i < attempts - 1) {
+        lastErr = new Error(`Server error ${res.status}`);
+        continue;
+      }
+      return res;
+    } catch (err) {
+      clearTimeout(timer);
+      lastErr = err;
+    }
+  }
+  throw lastErr || new Error('Delete failed');
+}
+
+// After a network/abort error we can't be sure the server didn't delete it
+// (some browsers abort the response to a 204). Confirm against the list.
+async function noteStillExists(id) {
+  try {
+    const res = await fetch(ENDPOINT, { cache: 'no-store' });
+    if (!res.ok) return true;
+    const list = await res.json();
+    return list.some((n) => n.id === id);
+  } catch {
+    return true;
+  }
+}
 
 const shimmer = keyframes`
   0% { background-position: -500px 0; }
@@ -210,6 +250,22 @@ const NoteList = styled.div`
   padding: 0 0.5rem 1rem;
 `;
 
+const RowDelete = styled(ResetButton)`
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: var(--radius-sm);
+  color: ${p => (p.$selected ? 'rgba(255,255,255,0.85)' : 'var(--dimmer)')};
+  flex-shrink: 0;
+  transition: background 0.12s ease, color 0.12s ease;
+  &:hover {
+    background: ${p => (p.$selected ? 'rgba(255,255,255,0.18)' : 'var(--danger-soft)')};
+    color: ${p => (p.$selected ? '#fff' : 'var(--danger)')};
+  }
+`;
+
 const NoteRow = styled.div`
   display: flex;
   flex-direction: column;
@@ -221,6 +277,8 @@ const NoteRow = styled.div`
   transition: background 0.12s ease;
   background: ${p => (p.$selected ? 'var(--accent)' : 'transparent')};
   &:hover { background: ${p => (p.$selected ? 'var(--accent)' : 'rgba(0,0,0,0.035)')}; }
+  &:hover ${RowDelete} { display: flex; }
+  ${p => p.$selected && css`${RowDelete} { display: flex; }`}
 `;
 
 const RowTop = styled.div`
@@ -648,6 +706,9 @@ function IconTrash() {
 function IconBack() {
   return <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6" /></svg>;
 }
+function IconDownload() {
+  return <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>;
+}
 
 export default function Notes() {
   const [notes, setNotes] = useState([]);
@@ -689,7 +750,7 @@ export default function Notes() {
     setLoading(true);
     setFetchErr(null);
     try {
-      const res = await fetch(ENDPOINT);
+      const res = await fetch(ENDPOINT, { cache: 'no-store' });
       if (!res.ok) throw new Error(`Server returned ${res.status}`);
       setNotes(await res.json());
     } catch (e) {
@@ -843,7 +904,7 @@ export default function Notes() {
       if (mod && e.key.toLowerCase() === 'n') { e.preventDefault(); startCreate(); return; }
       if (e.key === 'Escape') {
         if (contextMenu) { setContextMenu(null); return; }
-        if (confirmDeleteId !== null) { setConfirmDeleteId(null); return; }
+        if (confirmDeleteId !== null) { if (deletingId === null) setConfirmDeleteId(null); return; }
         if (document.activeElement === searchRef.current) searchRef.current.blur();
         else if (document.activeElement === editorRef.current) editorRef.current.blur();
       }
@@ -851,7 +912,7 @@ export default function Notes() {
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [contextMenu, confirmDeleteId]);
+  }, [contextMenu, confirmDeleteId, deletingId]);
 
   const filteredSortedNotes = useMemo(() => {
     let list = notes;
@@ -880,7 +941,21 @@ export default function Notes() {
     return { title: 'No notes yet', desc: 'Create your first note to get started.' };
   }, [notes.length, draftRow, q, filter]);
 
-  const requestDelete = (id) => setConfirmDeleteId(id);
+  const requestDelete = (id) => {
+    if (id === 'draft') {
+      if (pendingRef.current) {
+        clearTimeout(autosaveTimer.current);
+        pendingRef.current = null;
+      }
+      setSelectedId(null);
+      setContent('');
+      setSaveStatus('idle');
+      setSaveErr(null);
+      setContextMenu(null);
+      return;
+    }
+    setConfirmDeleteId(id);
+  };
   const cancelDelete = () => setConfirmDeleteId(null);
 
   const handleDelete = async (id) => {
@@ -889,24 +964,36 @@ export default function Notes() {
       pendingRef.current = null;
     }
     setDeletingId(id);
+    let success = false;
     try {
-      const res = await fetch(`${ENDPOINT}${id}/`, { method: 'DELETE' });
-      if (!res.ok && res.status !== 204) { toast('Delete failed.', true); return; }
-      setNotes(prev => prev.filter(n => n.id !== id));
-      if (selectedId === id) { setSelectedId(null); setContent(''); }
-      toast('Note deleted');
+      const res = await deleteNote(`${ENDPOINT}${id}/`);
+      success = res.ok || res.status === 204 || res.status === 404;
+      if (!success) toast('Delete failed. Please try again.', true);
     } catch (e) {
       console.error('[Notes] delete error:', e);
-      toast('Network error.', true);
-    } finally {
-      setDeletingId(null);
+      // The server may have deleted it even though the response was aborted.
+      success = !(await noteStillExists(id));
+      if (!success) toast('Network error — could not delete.', true);
     }
+    if (success) {
+      setNotes(prev => prev.filter(n => n.id !== id));
+      if (selectedIdRef.current === id) {
+        setSelectedId(null);
+        setContent('');
+        setSaveStatus('idle');
+        setSaveErr(null);
+      }
+      toast('Note deleted');
+    }
+    setDeletingId(null);
+    return success;
   };
 
   const confirmDeleteNow = async () => {
     const id = confirmDeleteId;
-    setConfirmDeleteId(null);
-    await handleDelete(id);
+    if (id == null) return;
+    const ok = await handleDelete(id);
+    if (ok) setConfirmDeleteId(null);
   };
 
   const togglePin = (id) => setPinned(prev => {
@@ -945,6 +1032,17 @@ export default function Notes() {
     } catch (e) {
       console.error('[Notes] clipboard error:', e);
       toast('Could not copy — clipboard unavailable.', true);
+    }
+  };
+
+  const downloadNotePdf = async (note) => {
+    try {
+      const { title, body } = splitTitleBody(note ? composeContent(note) : content);
+      const { isMarkdown } = await exportNotePdf({ title, body });
+      toast(isMarkdown ? 'Markdown detected — formatted PDF downloaded ✓' : 'PDF downloaded ✓');
+    } catch (e) {
+      console.error('[Notes] PDF export error:', e);
+      toast('Could not create the PDF.', true);
     }
   };
 
@@ -1015,6 +1113,15 @@ export default function Notes() {
                     <RowTop>
                       <RowTitle $selected={isSelected}>{wrapHighlights(item.title || 'New Note', q, `rt-${item.id}`)}</RowTitle>
                       {isPinned && <RowPin $selected={isSelected} aria-hidden="true"><IconPin filled /></RowPin>}
+                      <RowDelete
+                        type="button"
+                        $selected={isSelected}
+                        title={item.isDraft ? 'Discard draft' : 'Delete note'}
+                        aria-label={item.isDraft ? 'Discard draft' : `Delete ${item.title || 'note'}`}
+                        onClick={e => { e.stopPropagation(); requestDelete(item.id); }}
+                      >
+                        <IconTrash />
+                      </RowDelete>
                     </RowTop>
                     <RowSnippet $selected={isSelected}>{wrapHighlights(firstLine(item.text) || 'No additional text', q, `rs-${item.id}`)}</RowSnippet>
                     <RowDate $selected={isSelected}>{item.isDraft ? 'Just now' : fmtDate(item.created_at)}</RowDate>
@@ -1037,7 +1144,10 @@ export default function Notes() {
                 <BackButton aria-label="Back to list" onClick={handleBack}><IconBack /></BackButton>
 
                 {content.trim() && (
-                  <TbAction onClick={() => copyToClipboard(content)}><IconCopy /> Copy</TbAction>
+                  <>
+                    <TbAction onClick={() => copyToClipboard(content)}><IconCopy /> Copy</TbAction>
+                    <TbAction title="Download as PDF" onClick={() => downloadNotePdf()}><IconDownload /> PDF</TbAction>
+                  </>
                 )}
                 {typeof selectedId === 'number' && (
                   <>
@@ -1087,6 +1197,7 @@ export default function Notes() {
             <ContextMenuButton role="menuitem" onClick={() => { selectNote(cmNote); setContextMenu(null); }}>Open</ContextMenuButton>
             <ContextMenuButton role="menuitem" onClick={() => duplicateNote(cmNote)}>Duplicate</ContextMenuButton>
             <ContextMenuButton role="menuitem" onClick={() => { copyToClipboard(composeContent(cmNote)); setContextMenu(null); }}>Copy</ContextMenuButton>
+            <ContextMenuButton role="menuitem" onClick={() => { downloadNotePdf(cmNote); setContextMenu(null); }}>Download as PDF</ContextMenuButton>
             <CmDivider />
             <ContextMenuButton role="menuitem" onClick={() => { togglePin(cmNote.id); setContextMenu(null); }}>{isPinned ? 'Unpin' : 'Pin'} note</ContextMenuButton>
             <CmDivider />
@@ -1096,15 +1207,15 @@ export default function Notes() {
       })()}
 
       {confirmDeleteId !== null && (
-        <ModalOverlay onClick={cancelDelete}>
+        <ModalOverlay onClick={() => { if (deletingId === null) cancelDelete(); }}>
           <ModalBox role="dialog" aria-modal="true" aria-labelledby="delete-modal-title" onClick={e => e.stopPropagation()}>
             <ModalTitle id="delete-modal-title">Delete this note?</ModalTitle>
             <ModalDesc>This can't be undone. The note will be permanently removed.</ModalDesc>
             <ModalActions>
-              <Btn $variant="secondary" onClick={cancelDelete}>Cancel</Btn>
-              <Btn $variant="danger" onClick={confirmDeleteNow}>
+              <Btn $variant="secondary" onClick={cancelDelete} disabled={deletingId === confirmDeleteId}>Cancel</Btn>
+              <Btn $variant="danger" onClick={confirmDeleteNow} disabled={deletingId === confirmDeleteId}>
                 {deletingId === confirmDeleteId && <SpinSpan />}
-                Delete
+                {deletingId === confirmDeleteId ? 'Deleting…' : 'Delete'}
               </Btn>
             </ModalActions>
           </ModalBox>

@@ -1,7 +1,8 @@
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState, useCallback, useSyncExternalStore } from "react";
 import { useNavigate } from "react-router-dom";
 import { DollarRecognizer } from "../js/dollarRecognizer";
 import { useGestureCanvas } from "../js/useGestureCanvas";
+import { subscribeGestureNav, getGestureNavStatus } from "../js/gestureNavState";
 import yaml from "js-yaml";
 const BUILT_IN_TEMPLATES = {
   circle: [
@@ -104,6 +105,15 @@ export default function GestureNavigator() {
   const navConfigRef       = useRef(null);
   const toastTimerRef      = useRef(null);
 
+  // Triple-tap only does something while Gesture Nav is enabled from the
+  // landing page; the flag lives in localStorage and syncs via a window event.
+  const gestureNavStatus = useSyncExternalStore(
+    subscribeGestureNav,
+    getGestureNavStatus,
+    getGestureNavStatus
+  );
+  const gestureEnabled = gestureNavStatus === "active";
+
   useEffect(() => {
     fetch("/gesture-nav.yaml")
       .then((r) => r.text())
@@ -148,6 +158,7 @@ export default function GestureNavigator() {
     onGesture: handleGesture,
     onActivate: () => setActive(true),
     onDeactivate: () => setActive(false),
+    enabled: gestureEnabled,
   });
 
   return (
@@ -190,7 +201,7 @@ export default function GestureNavigator() {
               letterSpacing: "0.02em",
             }}
           >
-            Draw a gesture • Esc to cancel
+            Draw a gesture • triple-tap again or Esc to cancel
           </span>
         </div>
       )}

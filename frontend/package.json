@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "js-yaml": "^4.2.0",
+    "jspdf": "^4.2.1",
     "lucide-react": "^1.16.0",
     "prop-types": "^15.8.1",
     "react": "^19.1.0",

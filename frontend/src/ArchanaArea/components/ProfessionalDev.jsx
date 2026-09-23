@@ -47,6 +47,8 @@ const DEV_TYPES = [
   'Fellowship',
   'Session',
   'Online Course',
+  'Online Badges',
+  'Online Fellowship'
 ];
 
 const TYPE_META = {
