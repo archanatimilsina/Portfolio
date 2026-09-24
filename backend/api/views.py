@@ -193,6 +193,28 @@ class VerifySecretView(APIView):
             
         return Response({'allowed': allowed})
 
+
+class SecretMetaView(APIView):
+    """Exposes only the LENGTH of each saved secret so the UI can size its
+    input (dots / buffered digits). The secret values themselves are never
+    sent to the client — validation always happens in VerifySecretView."""
+
+    MAX_LEN = 12
+
+    def get(self, request):
+        record = AboutMe.objects.first()
+        if not record:
+            return Response({'gate_length': 4, 'sidebar_length': 4})
+
+        def length(value, default=4):
+            n = len(value or '')
+            return n if 1 <= n <= self.MAX_LEN else default
+
+        return Response({
+            'gate_length':    length(record.base_secret_code),
+            'sidebar_length': length(record.sidebar_code),
+        })
+
 class ChallengeListCreateAPIView(generics.ListCreateAPIView):
     queryset = Challenge.objects.all()
     serializer_class = ChallengeSerializer

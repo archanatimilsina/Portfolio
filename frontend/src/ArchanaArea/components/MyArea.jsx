@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useRef } from "react";
 import styled, { createGlobalStyle, keyframes, css } from "styled-components";
 
 import Drama from "./dramalist";
@@ -197,6 +197,7 @@ export default function MyArea({ onBack }) {
   const [activeSection,   setActiveSection]   = useState(null);
   const [burst,           setBurst]           = useState(false);
   const [sparkles,        setSparkles]        = useState([]);
+  const sidebarLenRef = useRef(4);
 
   const [projects,   setProjects]   = useState([]);
   const [pdItems,    setPdItems]    = useState([]);
@@ -243,16 +244,29 @@ export default function MyArea({ onBack }) {
   }, []);
 
   useEffect(() => {
-    const CODE = "9988";
+    // Pull the saved sidebar code's length from the database so the secret
+    // entry always matches it — nothing is hard-coded here.
+    fetch(`${BASE}/secret-meta/`)
+      .then((r) => r.json())
+      .then((d) => {
+        if (Number.isInteger(d.sidebar_length) && d.sidebar_length > 0) {
+          sidebarLenRef.current = d.sidebar_length;
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
     let buf = "";
     const handler = async (e) => {
       if (!/^[0-9]$/.test(e.key)) return;
       if (["INPUT","TEXTAREA"].includes(document.activeElement?.tagName)) return;
-      buf = (buf + e.key).slice(-CODE.length);
-    if (buf.length === 4) {
-  const allowed = await verifySecret('sidebar', buf);
-  if (allowed) { buf = ''; triggerBurst(); setSidebarRendered(true); setSidebarOpen(true); }
-}
+      const len = sidebarLenRef.current;
+      buf = (buf + e.key).slice(-len);
+      if (buf.length === len) {
+        const allowed = await verifySecret('sidebar', buf);
+        if (allowed) { buf = ''; triggerBurst(); setSidebarRendered(true); setSidebarOpen(true); }
+      }
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);

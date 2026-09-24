@@ -415,9 +415,23 @@ function SecretPinPad({ onClose, onSuccess }) {
   const [pin, setPin]       = useState('');
   const [status, setStatus] = useState('idle'); // idle | checking | wrong
   const [shake, setShake]   = useState(false);
+  const [len, setLen]       = useState(4);      // digits in the saved secret
   const aliveRef = useRef(true);
 
   useEffect(() => () => { aliveRef.current = false; }, []);
+
+  // Take the secret's length from the database so the pad mirrors whatever
+  // code is saved there (never hard-coded here).
+  useEffect(() => {
+    fetchWithRetry(`${BASE}/secret-meta/`)
+      .then((r) => r.json())
+      .then((d) => {
+        if (aliveRef.current && Number.isInteger(d.gate_length) && d.gate_length > 0) {
+          setLen(d.gate_length);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   const check = async (value) => {
     setStatus('checking');
@@ -441,10 +455,10 @@ function SecretPinPad({ onClose, onSuccess }) {
     if (status === 'checking') return;
     if (key === 'clear') { setPin(''); setStatus('idle'); return; }
     if (key === 'back')  { setPin((p) => p.slice(0, -1)); return; }
-    if (pin.length >= 4) return;
+    if (pin.length >= len) return;
     const next = pin + key;
     setPin(next);
-    if (next.length === 4) check(next);
+    if (next.length === len) check(next);
   };
 
   return (
@@ -453,10 +467,10 @@ function SecretPinPad({ onClose, onSuccess }) {
         <PinClose type="button" onClick={onClose} aria-label="Close PIN pad">✕</PinClose>
         <PinChip>Restricted</PinChip>
         <PinTitle>Enter PIN</PinTitle>
-        <PinSub>Four digits to continue.</PinSub>
+        <PinSub>{len} {len === 1 ? 'digit' : 'digits'} to continue.</PinSub>
 
         <PinDots>
-          {[0, 1, 2, 3].map((i) => (
+          {Array.from({ length: len }, (_, i) => (
             <PinDot key={i} $filled={i < pin.length} $err={status === 'wrong'} />
           ))}
         </PinDots>
@@ -488,6 +502,7 @@ export default function PortfolioLanding() {
   const [showSecretGate,   setShowSecretGate]   = useState(false);
   const [showSecretWorld,  setShowSecretWorld]  = useState(false);
   const [showPinPad,       setShowPinPad]       = useState(false);
+  const gateLenRef = useRef(4);
 
   // The enable flag is the single source of truth shared with the global
   // <GestureNavigator />, which is what actually listens for triple-taps.
@@ -499,12 +514,22 @@ export default function PortfolioLanding() {
   const gestureEnabled = gestureNavStatus === 'active';
 
 useEffect(() => {
+  // The saved secret's length decides how many digits the keyboard buffer
+  // holds — so this always matches whatever code is in the database.
+  fetchWithRetry(`${BASE}/secret-meta/`)
+    .then((r) => r.json())
+    .then((d) => { if (Number.isInteger(d.gate_length) && d.gate_length > 0) gateLenRef.current = d.gate_length; })
+    .catch(() => {});
+}, []);
+
+useEffect(() => {
   const bufRef = { current: '' };
   const handler = async (e) => {
     if (!/^[0-9]$/.test(e.key)) return;
     if (['INPUT', 'TEXTAREA'].includes(document.activeElement?.tagName)) return;
-    bufRef.current = (bufRef.current + e.key).slice(-4);
-    if (bufRef.current.length === 4) {
+    const len = gateLenRef.current;
+    bufRef.current = (bufRef.current + e.key).slice(-len);
+    if (bufRef.current.length === len) {
       const allowed = await verifySecret('gate', bufRef.current);
       if (allowed) { bufRef.current = ''; setShowSecretGate(true); }
     }
