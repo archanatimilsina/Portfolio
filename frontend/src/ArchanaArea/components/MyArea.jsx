@@ -16,6 +16,7 @@ import MusicVibes from './music';
 import GestureDraw from './GestureDraw';
 import ChallengeTracker from "./Challengetracker";
 import PDFManager from "./PdfChecker";
+import Blog from './Blog';
 
 export const revalidate = 60;
 const C = {
@@ -131,6 +132,7 @@ const SECTIONS = [
   { id:"music",            icon:"🐋",  label:"Music",           group:"life"    },
   { id:"gestureDraw",      icon:"🦒",  label:"Gesture Drawing",     group:"life"    },
   { id:"pdfchecker",      icon:"🫟",  label:"PDF Manager",     group:"life"    },
+  { id:"blog",             icon:"📰",  label:"Blog",            group:"explore" },
 ];
 
 
@@ -172,6 +174,7 @@ function SectionPage({ id, onBack }) {
   if (id === "gestureDraw")           return <GestureDraw         onBack={onBack} />;
   if (id === "challenges")           return <ChallengeTracker      onBack={onBack} />;
   if (id === "pdfchecker")           return <PDFManager      onBack={onBack} />;
+  if (id === "blog")           return <Blog              onBack={onBack} />;
 
   return (
     <PlaceholderWrap>

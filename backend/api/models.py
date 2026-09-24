@@ -17,6 +17,7 @@ from datetime import timedelta
 from django.db import models
 from django.core.exceptions import ValidationError
 from django.utils import timezone
+from django.utils.text import slugify
 
 
 
@@ -643,3 +644,156 @@ class PDFDocument(models.Model):
         super().delete(*args, **kwargs)
         if path:
             storage.delete(path)
+
+
+# ---------------------------------------------------------------------------
+# Blog
+# ---------------------------------------------------------------------------
+
+
+def blog_cover_upload_path(instance, filename):
+    ext = filename.split('.')[-1].lower() if '.' in filename else 'jpg'
+    return os.path.join('blog', 'covers', f"{uuid.uuid4()}.{ext}")
+
+
+def validate_cover_image(value):
+    if not value:
+        return
+    name = getattr(value, 'name', '').lower()
+    allowed = ('.jpg', '.jpeg', '.png', '.gif', '.webp', '.avif')
+    if not name.endswith(allowed):
+        raise ValidationError("Only image files are allowed (jpg, png, gif, webp, avif).")
+
+
+class BlogCategory(models.Model):
+    name = models.CharField(max_length=100, unique=True)
+    slug = models.SlugField(max_length=120, unique=True, blank=True)
+    description = models.CharField(max_length=255, blank=True)
+    color = models.CharField(max_length=7, default='#2d6a4f')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['name']
+        verbose_name = 'Blog category'
+        verbose_name_plural = 'Blog categories'
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            base = slugify(self.name)[:100] or 'category'
+            slug = base
+            i = 2
+            while BlogCategory.objects.filter(slug=slug).exclude(pk=self.pk).exists():
+                slug = f"{base}-{i}"
+                i += 1
+            self.slug = slug
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return self.name
+
+
+class BlogPost(models.Model):
+    class Status(models.TextChoices):
+        DRAFT = 'draft', 'Draft'
+        PUBLISHED = 'published', 'Published'
+
+    title = models.CharField(max_length=255)
+    slug = models.SlugField(max_length=280, unique=True, blank=True)
+    excerpt = models.TextField(blank=True)
+    content = models.TextField(blank=True)
+    cover_image = models.ImageField(
+        upload_to=blog_cover_upload_path,
+        blank=True,
+        null=True,
+        validators=[validate_cover_image],
+    )
+    category = models.ForeignKey(
+        BlogCategory,
+        related_name='posts',
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+    )
+    tags = models.JSONField(default=list, blank=True)
+    author = models.CharField(max_length=120, default='Archana Timilsina')
+    status = models.CharField(
+        max_length=12,
+        choices=Status.choices,
+        default=Status.DRAFT,
+    )
+    is_featured = models.BooleanField(default=False)
+    read_time = models.PositiveIntegerField(default=1, editable=False)
+    views = models.PositiveIntegerField(default=0, editable=False)
+    likes = models.PositiveIntegerField(default=0, editable=False)
+    published_at = models.DateTimeField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-is_featured', '-published_at', '-created_at']
+        verbose_name = 'Blog post'
+        verbose_name_plural = 'Blog posts'
+        indexes = [
+            models.Index(fields=['status']),
+            models.Index(fields=['slug']),
+        ]
+
+    def __str__(self):
+        return f"{self.title} ({self.get_status_display()})"
+
+    @property
+    def comment_count(self):
+        return self.comments.count()
+
+    def _build_unique_slug(self):
+        base = slugify(self.title)[:250] or 'post'
+        slug = base
+        i = 2
+        while BlogPost.objects.filter(slug=slug).exclude(pk=self.pk).exists():
+            suffix = f"-{i}"
+            slug = f"{base[:250 - len(suffix)]}{suffix}"
+            i += 1
+        return slug
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = self._build_unique_slug()
+
+        words = len((self.content or '').split())
+        self.read_time = max(1, round(words / 200)) if words else 1
+
+        if self.status == self.Status.PUBLISHED and not self.published_at:
+            self.published_at = timezone.now()
+
+        # Clean / de-duplicate tags while persisting.
+        if isinstance(self.tags, list):
+            seen, cleaned = set(), []
+            for tag in self.tags:
+                tag = str(tag).strip()
+                if tag and tag.lower() not in seen:
+                    seen.add(tag.lower())
+                    cleaned.append(tag)
+            self.tags = cleaned
+
+        super().save(*args, **kwargs)
+
+
+class BlogComment(models.Model):
+    post = models.ForeignKey(BlogPost, related_name='comments', on_delete=models.CASCADE)
+    author_name = models.CharField(max_length=120, default='Anonymous')
+    body = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['created_at']
+        verbose_name = 'Blog comment'
+        verbose_name_plural = 'Blog comments'
+
+    def __str__(self):
+        return f"{self.author_name}: {self.body[:40]}"
+
+
+@receiver(post_delete, sender=BlogPost)
+def auto_delete_blog_cover(sender, instance, **kwargs):
+    if instance.cover_image:
+        instance.cover_image.delete(save=False)

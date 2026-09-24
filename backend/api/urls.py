@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import HealthView, ProjectDetailView, ChallengeListCreateAPIView ,PDFListCreateView, PDFDetailView, PDFDownloadView,ChallengeMarkDayAPIView ,ChallengeInstantStatusAPIView ,  ChallengeRetrieveUpdateDestroyAPIView, ProfessionalDevelopmentListView, TaskRetrieveUpdateDestroyAPIView, TaskListCreateAPIView, projectListView, ProfessionalDevelopmentDetailView, AboutMeListCreateView, AboutMeRetrieveUpdateDestroyView, DayLogListCreateView, DayLogDetailView, ScrapbookArchiveAPIView, ScrapbookStampDetailAPIView, NoteListCreateAPIView, NoteRetrieveUpdateDestroyAPIView, DreamWishListCreateAPIView, DreamWishDetailAPIView, WatchlistItemListCreateAPIView, WatchlistItemRetrieveUpdateDestroyAPIView, GoalListCreateAPIView, GoalRetrieveUpdateDestroyAPIView, GoalDayToggleAPIView, VerifySecretView, HobbyListCreateAPIView, HobbyRetrieveUpdateDestroyAPIView, MusicVibeListCreateAPIView, MusicVibeRetrieveUpdateDestroyAPIView
+from .views import HealthView, ProjectDetailView, ChallengeListCreateAPIView ,PDFListCreateView, PDFDetailView, PDFDownloadView,ChallengeMarkDayAPIView ,ChallengeInstantStatusAPIView ,  ChallengeRetrieveUpdateDestroyAPIView, ProfessionalDevelopmentListView, TaskRetrieveUpdateDestroyAPIView, TaskListCreateAPIView, projectListView, ProfessionalDevelopmentDetailView, AboutMeListCreateView, AboutMeRetrieveUpdateDestroyView, DayLogListCreateView, DayLogDetailView, ScrapbookArchiveAPIView, ScrapbookStampDetailAPIView, NoteListCreateAPIView, NoteRetrieveUpdateDestroyAPIView, DreamWishListCreateAPIView, DreamWishDetailAPIView, WatchlistItemListCreateAPIView, WatchlistItemRetrieveUpdateDestroyAPIView, GoalListCreateAPIView, GoalRetrieveUpdateDestroyAPIView, GoalDayToggleAPIView, VerifySecretView, HobbyListCreateAPIView, HobbyRetrieveUpdateDestroyAPIView, MusicVibeListCreateAPIView, MusicVibeRetrieveUpdateDestroyAPIView, BlogCategoryListCreateAPIView, BlogCategoryRetrieveUpdateDestroyAPIView, BlogPostListCreateAPIView, BlogPostRetrieveUpdateDestroyAPIView, BlogPostLikeAPIView, BlogPostViewAPIView, BlogCommentListCreateAPIView, BlogCommentRetrieveUpdateDestroyAPIView
 
 urlpatterns = [
     path('health/', HealthView.as_view(), name='health'),
@@ -36,6 +36,16 @@ urlpatterns = [
     path("pdfs/", PDFListCreateView.as_view(), name="pdf-list-create"),
     path("pdfs/<uuid:id>/", PDFDetailView.as_view(), name="pdf-detail"),
     path("pdfs/<uuid:id>/download/", PDFDownloadView.as_view(), name="pdf-download"),
+
+    # Blog
+    path('blog/categories/', BlogCategoryListCreateAPIView.as_view(), name='blog-category-list-create'),
+    path('blog/categories/<int:pk>/', BlogCategoryRetrieveUpdateDestroyAPIView.as_view(), name='blog-category-detail'),
+    path('blog/posts/', BlogPostListCreateAPIView.as_view(), name='blog-post-list-create'),
+    path('blog/posts/<int:pk>/', BlogPostRetrieveUpdateDestroyAPIView.as_view(), name='blog-post-detail'),
+    path('blog/posts/<int:pk>/like/', BlogPostLikeAPIView.as_view(), name='blog-post-like'),
+    path('blog/posts/<int:pk>/view/', BlogPostViewAPIView.as_view(), name='blog-post-view'),
+    path('blog/comments/', BlogCommentListCreateAPIView.as_view(), name='blog-comment-list-create'),
+    path('blog/comments/<int:pk>/', BlogCommentRetrieveUpdateDestroyAPIView.as_view(), name='blog-comment-detail'),
 
 ]
 

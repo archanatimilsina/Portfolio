@@ -1,5 +1,6 @@
 from rest_framework import serializers
-from .models import Challenge, ChallengeDay,ProfessionalDevelopment, Project, AboutMe, DayLog, Task, ScrapbookStamp,OperativeNote, DreamWish, WatchlistItem, OperativeGoal,  HobbyItem, MusicVibeItem, PDFDocument
+from .models import Challenge, ChallengeDay,ProfessionalDevelopment, Project, AboutMe, DayLog, Task, ScrapbookStamp,OperativeNote, DreamWish, WatchlistItem, OperativeGoal,  HobbyItem, MusicVibeItem, PDFDocument, BlogCategory, BlogPost, BlogComment
+import json
 import requests
 from django.core.files.base import ContentFile
 from urllib.parse import urlparse
@@ -387,3 +388,126 @@ class PDFDocumentSerializer(serializers.ModelSerializer):
         if not value.name.lower().endswith(".pdf"):
             raise serializers.ValidationError("Only PDF files are allowed.")
         return value
+
+
+# ---------------------------------------------------------------------------
+# Blog
+# ---------------------------------------------------------------------------
+
+
+class TagsField(serializers.Field):
+    """Accepts tags as a JSON list, a JSON-encoded string or a comma list."""
+
+    def to_internal_value(self, data):
+        if data is None:
+            return []
+        if isinstance(data, str):
+            raw = data.strip()
+            if not raw:
+                return []
+            try:
+                parsed = json.loads(raw)
+                if isinstance(parsed, list):
+                    return [str(t).strip() for t in parsed if str(t).strip()]
+            except (ValueError, TypeError):
+                pass
+            return [t.strip() for t in raw.split(',') if t.strip()]
+        if isinstance(data, (list, tuple)):
+            return [str(t).strip() for t in data if str(t).strip()]
+        raise serializers.ValidationError("Tags must be a list of strings.")
+
+    def to_representation(self, value):
+        return value or []
+
+
+class BlogCategorySerializer(serializers.ModelSerializer):
+    post_count = serializers.IntegerField(source='posts.count', read_only=True)
+
+    class Meta:
+        model = BlogCategory
+        fields = ['id', 'name', 'slug', 'description', 'color', 'post_count', 'created_at']
+        read_only_fields = ['id', 'slug', 'created_at']
+
+    def validate_name(self, value):
+        value = value.strip()
+        if not value:
+            raise serializers.ValidationError("Category name cannot be empty.")
+        return value
+
+
+class BlogCommentSerializer(serializers.ModelSerializer):
+    post_title = serializers.CharField(source='post.title', read_only=True)
+
+    class Meta:
+        model = BlogComment
+        fields = ['id', 'post', 'post_title', 'author_name', 'body', 'created_at']
+        read_only_fields = ['id', 'created_at']
+
+    def validate_body(self, value):
+        value = value.strip()
+        if not value:
+            raise serializers.ValidationError("Comment cannot be empty.")
+        return value
+
+    def validate_author_name(self, value):
+        return (value or '').strip() or 'Anonymous'
+
+
+class BlogPostListSerializer(serializers.ModelSerializer):
+    cover_image_url = serializers.SerializerMethodField()
+    category_name = serializers.CharField(source='category.name', read_only=True, default=None)
+    category_color = serializers.CharField(source='category.color', read_only=True, default=None)
+    tags = TagsField(required=False)
+    comment_count = serializers.IntegerField(read_only=True)
+    status_display = serializers.CharField(source='get_status_display', read_only=True)
+    remove_cover = serializers.BooleanField(write_only=True, required=False, default=False)
+
+    class Meta:
+        model = BlogPost
+        fields = [
+            'id', 'title', 'slug', 'excerpt', 'cover_image', 'cover_image_url',
+            'category', 'category_name', 'category_color', 'tags', 'author',
+            'status', 'status_display', 'is_featured', 'read_time', 'views',
+            'likes', 'comment_count', 'published_at', 'created_at', 'updated_at',
+            'remove_cover',
+        ]
+        read_only_fields = ['id', 'slug', 'read_time', 'views', 'likes', 'published_at', 'created_at', 'updated_at']
+        extra_kwargs = {'cover_image': {'write_only': True, 'required': False}}
+
+    def get_cover_image_url(self, obj):
+        if obj.cover_image:
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(obj.cover_image.url)
+            return obj.cover_image.url
+        return None
+
+    def validate_title(self, value):
+        value = value.strip()
+        if not value:
+            raise serializers.ValidationError("A blog title is required.")
+        return value
+
+    def create(self, validated_data):
+        # `remove_cover` is a write-only helper for the update flow; it is
+        # never a model field, so drop it before creating the instance.
+        validated_data.pop('remove_cover', None)
+        return super().create(validated_data)
+
+    def update(self, instance, validated_data):
+        remove_cover = validated_data.pop('remove_cover', False)
+        if remove_cover and instance.cover_image:
+            instance.cover_image.delete(save=False)
+            instance.cover_image = None
+        return super().update(instance, validated_data)
+
+
+class BlogPostDetailSerializer(BlogPostListSerializer):
+    comments = BlogCommentSerializer(many=True, read_only=True)
+    word_count = serializers.SerializerMethodField()
+
+    class Meta(BlogPostListSerializer.Meta):
+        fields = BlogPostListSerializer.Meta.fields + ['content', 'comments', 'word_count']
+
+    def get_word_count(self, obj):
+        return len((obj.content or '').split())
