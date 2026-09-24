@@ -6,6 +6,7 @@ import { getGestureNavStatus, setGestureNavStatus, subscribeGestureNav } from '.
 import ProjectSpecificationPage from './projectDescriptionPage';
 import ProfessionalCredential from './ProfessionalCredential';
 import SecretWorld from '../ArchanaArea/components/MyArea';
+import GesNavPromo from './GesNavPromo';
 export const revalidate = 60;
 const API_BASE = import.meta.env.VITE_API_URL;
 const BASE = `${API_BASE}/api`;
@@ -416,6 +417,7 @@ useEffect(() => {
   return (
     <>
       <GlobalStyle />
+      <GesNavPromo />
 
       {showGestureModal && (
         <GestureNavModal
