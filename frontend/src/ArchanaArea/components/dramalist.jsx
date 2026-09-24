@@ -109,6 +109,7 @@ export default function Drama({ onBack }) {
   const [modal, setModal] = useState(null);
   const [editItem, setEditItem] = useState(null);
   const [delTarget, setDelTarget] = useState(null);
+  const [showInfo, setShowInfo] = useState(false);
 
   const [form, setForm] = useState(EMPTY_FORM);
   const [errors, setErrors] = useState({});
@@ -322,14 +323,25 @@ export default function Drama({ onBack }) {
 
         <Main>
           <PageHeader>
-            <PageChip>
-              <span />
-              Personal Collection
-            </PageChip>
-            <PageTitle>
-              Dramas, <em>Movies</em> & More
-            </PageTitle>
-            <PageDesc>Every title that has made me feel something. No debate.</PageDesc>
+            <HeaderRow>
+              <HeaderText>
+                <PageChip>
+                  <span />
+                  Personal Collection
+                </PageChip>
+                <PageTitle>
+                  Dramas, <em>Movies</em> & More
+                </PageTitle>
+                <PageDesc>Every title that has made me feel something. No debate.</PageDesc>
+              </HeaderText>
+              <InfoBtn
+                type="button"
+                onClick={() => setShowInfo(true)}
+                aria-label="Open collection info"
+              >
+                <span>ℹ️</span> Collection Info
+              </InfoBtn>
+            </HeaderRow>
           </PageHeader>
 
           {apiError && (
@@ -337,28 +349,6 @@ export default function Drama({ onBack }) {
               {apiError}
               <DismissX onClick={() => setApiError('')}>✕</DismissX>
             </ErrorBanner>
-          )}
-
-          {!loading && (
-            <StatsStrip>
-              {[
-                { n: counts.total, l: 'Total', e: '📋' },
-                { n: counts.watching, l: 'Watching', e: '▶️' },
-                { n: counts.completed, l: 'Completed', e: '✅' },
-                { n: counts.planned, l: 'Planned', e: '📌' },
-                { n: counts.drama, l: 'Dramas', e: '🎭' },
-                { n: counts.movie, l: 'Movies', e: '🎬' },
-                { n: counts.anime, l: 'Anime', e: '✨' },
-                { n: counts.book, l: 'Books', e: '📚' },
-                { n: counts.manga, l: 'Manga', e: '🈺' },
-              ].map((s, i) => (
-                <StatPill key={i}>
-                  <span style={{ fontSize: '1rem' }}>{s.e}</span>
-                  <StatNum>{s.n}</StatNum>
-                  <StatLbl>{s.l}</StatLbl>
-                </StatPill>
-              ))}
-            </StatsStrip>
           )}
 
           <ControlsRow>
@@ -401,6 +391,9 @@ export default function Drama({ onBack }) {
                 </FilterTab>
               ))}
             </FilterTabs>
+            <ResultCount>
+              {visible.length} {visible.length === 1 ? 'title' : 'titles'}
+            </ResultCount>
           </StatusFilterRow>
 
           {loading && (
@@ -429,6 +422,75 @@ export default function Drama({ onBack }) {
               <Grid>{visible.map((item) => renderCard(item))}</Grid>
             ))}
         </Main>
+
+        {showInfo && (
+          <Overlay
+            onClick={(e) => {
+              if (e.target === e.currentTarget) setShowInfo(false);
+            }}
+          >
+            <InfoPanel>
+              <ModalClose onClick={() => setShowInfo(false)}>✕</ModalClose>
+
+              <InfoHead>
+                <InfoChip>Overview</InfoChip>
+                <InfoTitle>
+                  Collection <em>Info</em>
+                </InfoTitle>
+                <InfoSub>Everything you've saved, at a glance.</InfoSub>
+              </InfoHead>
+
+              <InfoTotal>
+                <InfoTotalNum>{counts.total}</InfoTotalNum>
+                <InfoTotalLbl>Total Titles</InfoTotalLbl>
+              </InfoTotal>
+
+              <InfoSectionTitle>By Status</InfoSectionTitle>
+              <InfoGrid>
+                {[
+                  { l: 'Watching', e: '▶️', v: counts.watching, c: '#2d6a4f' },
+                  { l: 'Completed', e: '✅', v: counts.completed, c: '#52d68a' },
+                  { l: 'Planned', e: '📌', v: counts.planned, c: '#d4af37' },
+                ].map((s) => (
+                  <StatRow key={s.l}>
+                    <StatEmoji>{s.e}</StatEmoji>
+                    <StatLabel>{s.l}</StatLabel>
+                    <StatValue>{s.v}</StatValue>
+                    <StatTrack>
+                      <StatFill
+                        $c={s.c}
+                        style={{ width: `${counts.total ? (s.v / counts.total) * 100 : 0}%` }}
+                      />
+                    </StatTrack>
+                  </StatRow>
+                ))}
+              </InfoGrid>
+
+              <InfoSectionTitle>By Type</InfoSectionTitle>
+              <InfoGrid>
+                {[
+                  { l: 'Dramas', e: '🎭', v: counts.drama, c: '#5e35b1' },
+                  { l: 'Movies', e: '🎬', v: counts.movie, c: '#c2185b' },
+                  { l: 'Anime', e: '✨', v: counts.anime, c: '#00838f' },
+                  { l: 'Books', e: '📚', v: counts.book, c: '#e65100' },
+                  { l: 'Manga', e: '🈺', v: counts.manga, c: '#558b2f' },
+                ].map((s) => (
+                  <StatRow key={s.l}>
+                    <StatEmoji>{s.e}</StatEmoji>
+                    <StatLabel>{s.l}</StatLabel>
+                    <StatValue>{s.v}</StatValue>
+                    <StatTrack>
+                      <StatFill
+                        $c={s.c}
+                        style={{ width: `${counts.total ? (s.v / counts.total) * 100 : 0}%` }}
+                      />
+                    </StatTrack>
+                  </StatRow>
+                ))}
+              </InfoGrid>
+            </InfoPanel>
+          </Overlay>
+        )}
 
         {modal && (
           <Overlay
@@ -729,34 +791,188 @@ const ModalError = styled.div`
   margin-top: 1rem;
 `;
 
-const StatsStrip = styled.div`
+const HeaderRow = styled.div`
   display: flex;
-  gap: 1rem;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1.5rem;
   flex-wrap: wrap;
-  margin-bottom: 2rem;
 `;
-const StatPill = styled.div`
-  background: ${C.white};
-  border: 1.5px solid ${C.border};
-  border-radius: 12px;
-  padding: 0.65rem 1.1rem;
-  display: flex;
+const HeaderText = styled.div`
+  flex: 1;
+  min-width: 240px;
+`;
+const InfoBtn = styled.button`
+  display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-`;
-const StatNum = styled.span`
   font-family: 'Syne', sans-serif;
-  font-size: 1.2rem;
-  font-weight: 800;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
   color: ${C.dark};
+  background: ${C.white};
+  border: 1.5px solid ${C.border};
+  border-radius: 100px;
+  padding: 0.55rem 1.05rem;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.18s ease;
+  span {
+    font-size: 0.9rem;
+  }
+  &:hover {
+    border-color: ${C.green};
+    background: ${C.greenLt};
+    color: ${C.green};
+    transform: translateY(-1px);
+  }
 `;
-const StatLbl = styled.span`
+
+const InfoPanel = styled.div`
+  background: ${C.white};
+  border: 1.5px solid ${C.border};
+  border-radius: 24px;
+  padding: 2rem 2.1rem;
+  width: 100%;
+  max-width: 560px;
+  position: relative;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 30px 70px rgba(26, 26, 46, 0.22);
+  animation: ${modalIn} 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  &::-webkit-scrollbar {
+    width: 5px;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: ${C.border};
+    border-radius: 5px;
+  }
+`;
+const InfoHead = styled.div`
+  text-align: center;
+  margin-bottom: 1.4rem;
+`;
+const InfoChip = styled.div`
+  display: inline-block;
   font-family: 'Syne', sans-serif;
-  font-size: 0.62rem;
+  font-size: 0.6rem;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 1.5px;
+  letter-spacing: 2px;
+  color: ${C.green};
+  background: ${C.greenLt};
+  border-radius: 100px;
+  padding: 0.25rem 0.75rem;
+  margin-bottom: 0.75rem;
+`;
+const InfoTitle = styled.h2`
+  font-family: 'Syne', sans-serif;
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: ${C.dark};
+  letter-spacing: -0.03em;
+  em {
+    font-style: normal;
+    color: ${C.green};
+  }
+`;
+const InfoSub = styled.p`
+  font-size: 0.85rem;
   color: ${C.soft};
+  margin-top: 0.3rem;
+`;
+const InfoTotal = styled.div`
+  text-align: center;
+  background: linear-gradient(135deg, ${C.green}, ${C.dark});
+  border-radius: 18px;
+  padding: 1.3rem;
+  margin-bottom: 0.4rem;
+  color: #fff;
+`;
+const InfoTotalNum = styled.div`
+  font-family: 'Syne', sans-serif;
+  font-size: 2.6rem;
+  font-weight: 800;
+  line-height: 1;
+`;
+const InfoTotalLbl = styled.div`
+  font-family: 'Syne', sans-serif;
+  font-size: 0.64rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  opacity: 0.85;
+  margin-top: 0.4rem;
+`;
+const InfoSectionTitle = styled.div`
+  font-family: 'Syne', sans-serif;
+  font-size: 0.66rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.8px;
+  color: ${C.soft};
+  margin: 1.4rem 0 0.75rem;
+`;
+const InfoGrid = styled.div`
+  display: grid;
+  gap: 0.6rem;
+`;
+const StatRow = styled.div`
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 0.5rem 0.65rem;
+  background: ${C.muted};
+  border: 1.5px solid ${C.border};
+  border-radius: 14px;
+  padding: 0.75rem 0.95rem;
+`;
+const StatEmoji = styled.span`
+  grid-column: 1;
+  font-size: 1.05rem;
+`;
+const StatLabel = styled.span`
+  grid-column: 2;
+  font-family: 'Syne', sans-serif;
+  font-weight: 700;
+  font-size: 0.8rem;
+  color: ${C.dark};
+`;
+const StatValue = styled.span`
+  grid-column: 3;
+  font-family: 'Syne', sans-serif;
+  font-weight: 800;
+  font-size: 1rem;
+  color: ${C.dark};
+`;
+const StatTrack = styled.div`
+  grid-column: 1 / -1;
+  height: 6px;
+  background: ${C.white};
+  border-radius: 100px;
+  overflow: hidden;
+`;
+const StatFill = styled.div`
+  height: 100%;
+  border-radius: 100px;
+  background: ${(p) => p.$c};
+  transition: width 0.6s ease;
+`;
+
+const ResultCount = styled.span`
+  margin-left: auto;
+  font-family: 'Syne', sans-serif;
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: ${C.soft};
+  background: ${C.white};
+  border: 1.5px solid ${C.border};
+  border-radius: 100px;
+  padding: 0.3rem 0.8rem;
 `;
 
 const ControlsRow = styled.div`
