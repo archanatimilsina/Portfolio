@@ -10,6 +10,7 @@ import {
  * Floating onboarding card that promotes Gesture Navigation ("GESNAV").
  *
  * · Appears when the landing page opens and auto-dismisses after 1 minute.
+ * · Skipped entirely when Gesture Nav is already activated.
  * · The ✕ closes it at any time.
  * · "Okay" swaps the intro copy for a step-by-step guide with animated
  *   drawings of every gesture and where it navigates.
@@ -94,7 +95,10 @@ export default function GesNavPromo() {
     return () => clearTimeout(timer);
   }, [visible, step]);
 
-  if (!visible) return null;
+  // Never pitch Gesture Nav to someone who's already using it — if it's
+  // activated, the card stays hidden (and hides itself the moment the
+  // visitor turns it on from the card or the header).
+  if (!visible || enabled) return null;
 
   const close = () => setVisible(false);
   const activate = () => setGestureNavStatus(enabled ? 'inactive' : 'active');
