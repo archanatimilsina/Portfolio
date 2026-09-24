@@ -334,11 +334,155 @@ function CredentialsSection({ onCardClick }) {
 }
 
 
+/* ---------------------------------------------------------------
+   The secret area is opened through a deliberately rare interaction:
+   press & HOLD the tiny green dot, then triple-tap it. Both steps must
+   happen in that order, so stumbling onto it by accident is essentially
+   impossible. The trigger only reveals the PIN pad — the real check is
+   done server-side (verify-secret).
+---------------------------------------------------------------- */
+const SECRET_HOLD_MS = 1200; // how long the dot must be held
+const SECRET_TAP_MS  = 1200; // window the three taps must fall inside
+const SECRET_TAPS    = 3;
+
+function SecretTrigger({ onUnlock }) {
+  const holdTimer   = useRef(null);
+  const disarmTimer = useRef(null);
+  const heldRef     = useRef(false);
+  const tapsRef     = useRef([]);
+  const [armed, setArmed] = useState(false);
+
+  useEffect(() => () => {
+    clearTimeout(holdTimer.current);
+    clearTimeout(disarmTimer.current);
+  }, []);
+
+  const onPointerDown = (e) => {
+    e.preventDefault();
+    heldRef.current = false;
+    clearTimeout(holdTimer.current);
+    holdTimer.current = setTimeout(() => {
+      heldRef.current = true;
+      tapsRef.current = [];
+      setArmed(true);
+      clearTimeout(disarmTimer.current);
+      disarmTimer.current = setTimeout(() => setArmed(false), 4000);
+    }, SECRET_HOLD_MS);
+  };
+
+  const onPointerUp = () => {
+    clearTimeout(holdTimer.current);
+    if (heldRef.current) {
+      // releasing the long-press itself never counts as a tap
+      heldRef.current = false;
+      return;
+    }
+    if (!armed) return;
+    const now = Date.now();
+    tapsRef.current = [...tapsRef.current, now].filter((t) => now - t <= SECRET_TAP_MS);
+    if (tapsRef.current.length >= SECRET_TAPS) {
+      tapsRef.current = [];
+      setArmed(false);
+      clearTimeout(disarmTimer.current);
+      onUnlock();
+    }
+  };
+
+  const onPointerCancel = () => {
+    clearTimeout(holdTimer.current);
+    heldRef.current = false;
+  };
+
+  return (
+    <SecretDot
+      $armed={armed}
+      onPointerDown={onPointerDown}
+      onPointerUp={onPointerUp}
+      onPointerCancel={onPointerCancel}
+      onContextMenu={(e) => e.preventDefault()}
+    />
+  );
+}
+
+const PIN_KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', 'clear', '0', 'back'];
+
+function SecretPinPad({ onClose, onSuccess }) {
+  const [pin, setPin]       = useState('');
+  const [status, setStatus] = useState('idle'); // idle | checking | wrong
+  const [shake, setShake]   = useState(false);
+  const aliveRef = useRef(true);
+
+  useEffect(() => () => { aliveRef.current = false; }, []);
+
+  const check = async (value) => {
+    setStatus('checking');
+    const ok = await verifySecret('gate', value);
+    if (!aliveRef.current) return;
+    if (ok) {
+      onSuccess();
+      return;
+    }
+    setStatus('wrong');
+    setShake(true);
+    setTimeout(() => {
+      if (!aliveRef.current) return;
+      setPin('');
+      setStatus('idle');
+      setShake(false);
+    }, 750);
+  };
+
+  const press = (key) => {
+    if (status === 'checking') return;
+    if (key === 'clear') { setPin(''); setStatus('idle'); return; }
+    if (key === 'back')  { setPin((p) => p.slice(0, -1)); return; }
+    if (pin.length >= 4) return;
+    const next = pin + key;
+    setPin(next);
+    if (next.length === 4) check(next);
+  };
+
+  return (
+    <PinOverlay onPointerDown={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+      <PinPanel $shake={shake}>
+        <PinClose type="button" onClick={onClose} aria-label="Close PIN pad">✕</PinClose>
+        <PinChip>Restricted</PinChip>
+        <PinTitle>Enter PIN</PinTitle>
+        <PinSub>Four digits to continue.</PinSub>
+
+        <PinDots>
+          {[0, 1, 2, 3].map((i) => (
+            <PinDot key={i} $filled={i < pin.length} $err={status === 'wrong'} />
+          ))}
+        </PinDots>
+
+        <PinMsg $err={status === 'wrong'}>
+          {status === 'checking' ? 'Checking…' : status === 'wrong' ? 'Incorrect PIN' : '\u00A0'}
+        </PinMsg>
+
+        <PinPad>
+          {PIN_KEYS.map((k) => (
+            <PinKey
+              key={k}
+              type="button"
+              $muted={k === 'clear' || k === 'back'}
+              onClick={() => press(k)}
+            >
+              {k === 'clear' ? 'C' : k === 'back' ? '⌫' : k}
+            </PinKey>
+          ))}
+        </PinPad>
+      </PinPanel>
+    </PinOverlay>
+  );
+}
+
 export default function PortfolioLanding() {
   const [activeItem,       setActiveItem]       = useState(null);
   const [showGestureModal, setShowGestureModal] = useState(false);
   const [showSecretGate,   setShowSecretGate]   = useState(false);
   const [showSecretWorld,  setShowSecretWorld]  = useState(false);
+  const [showPinPad,       setShowPinPad]       = useState(false);
 
   // The enable flag is the single source of truth shared with the global
   // <GestureNavigator />, which is what actually listens for triple-taps.
@@ -434,9 +578,19 @@ useEffect(() => {
         />
       )}
 
+      {showPinPad && (
+        <SecretPinPad
+          onClose={() => setShowPinPad(false)}
+          onSuccess={() => {
+            setShowPinPad(false);
+            setShowSecretGate(true);
+          }}
+        />
+      )}
+
       <Header>
         <Brand>
-          <Dot />
+          <SecretTrigger onUnlock={() => setShowPinPad(true)} />
           <BrandName>Hello, I'm <em>Archana Timilsina</em></BrandName>
         </Brand>
         <HeaderActions>
@@ -575,7 +729,140 @@ const Header = styled.header`
   z-index: 100;
 `;
 const Brand = styled.div`display: flex; align-items: center; gap: 0.75rem;`;
-const Dot = styled.div`width: 11px; height: 11px; background: #2d6a4f; border-radius: 50%;`;
+const SecretDot = styled.div`
+  width: 11px;
+  height: 11px;
+  background: #2d6a4f;
+  border-radius: 50%;
+  position: relative;
+  cursor: default;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+  box-shadow: ${(p) => (p.$armed ? '0 0 0 5px rgba(45,106,79,0.18)' : 'none')};
+  transform: ${(p) => (p.$armed ? 'scale(1.2)' : 'scale(1)')};
+
+  /* invisible ~39px hit target without changing the visual layout */
+  &::before {
+    content: '';
+    position: absolute;
+    inset: -14px;
+    border-radius: 50%;
+  }
+`;
+
+const PinOverlay = styled.div`
+  position: fixed;
+  inset: 0;
+  z-index: 400;
+  background: rgba(26, 26, 46, 0.55);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.25rem;
+  animation: ${overlayFadeIn} 0.2s ease forwards;
+`;
+const PinPanel = styled.div`
+  position: relative;
+  width: 100%;
+  max-width: 330px;
+  background: #ffffff;
+  border: 2px solid #1a1a2e;
+  border-radius: 24px;
+  padding: 1.9rem 1.7rem 1.6rem;
+  text-align: center;
+  box-shadow: 0 30px 70px rgba(26, 26, 46, 0.28);
+  animation: ${(p) => (p.$shake ? wrongShake : modalSlideIn)} 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+`;
+const PinClose = styled.button`
+  position: absolute;
+  top: 0.85rem;
+  right: 1rem;
+  width: 30px;
+  height: 30px;
+  border: none;
+  border-radius: 50%;
+  background: #eceae3;
+  color: #1a1a2e;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  &:hover { background: #1a1a2e; color: #ffffff; }
+`;
+const PinChip = styled.div`
+  display: inline-block;
+  font-family: 'Syne', sans-serif;
+  font-size: 0.58rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: #2d6a4f;
+  background: #e4f1ea;
+  border-radius: 100px;
+  padding: 0.25rem 0.75rem;
+  margin-bottom: 0.7rem;
+`;
+const PinTitle = styled.h3`
+  font-family: 'Syne', sans-serif;
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: #1a1a2e;
+  letter-spacing: -0.03em;
+`;
+const PinSub = styled.p`
+  font-size: 0.82rem;
+  color: #7a7567;
+  margin-top: 0.2rem;
+`;
+const PinDots = styled.div`
+  display: flex;
+  justify-content: center;
+  gap: 0.85rem;
+  margin: 1.4rem 0 0.4rem;
+`;
+const PinDot = styled.span`
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid ${(p) => (p.$err ? '#c0392b' : '#1a1a2e')};
+  background: ${(p) => (p.$filled ? (p.$err ? '#c0392b' : '#2d6a4f') : 'transparent')};
+  transition: all 0.18s ease;
+`;
+const PinMsg = styled.div`
+  min-height: 1.15rem;
+  font-family: 'Syne', sans-serif;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  color: ${(p) => (p.$err ? '#c0392b' : '#7a7567')};
+  margin-bottom: 0.9rem;
+`;
+const PinPad = styled.div`
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.6rem;
+`;
+const PinKey = styled.button`
+  font-family: 'Syne', sans-serif;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: ${(p) => (p.$muted ? '#7a7567' : '#1a1a2e')};
+  background: ${(p) => (p.$muted ? '#eceae3' : '#f6f5f0')};
+  border: 1.5px solid #d8d4cc;
+  border-radius: 14px;
+  padding: 0.85rem 0;
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
+  transition: all 0.14s ease;
+  &:hover { background: #e4f1ea; border-color: #2d6a4f; color: #2d6a4f; }
+  &:active { transform: scale(0.95); background: #2d6a4f; border-color: #2d6a4f; color: #ffffff; }
+`;
 const BrandName = styled.span`
   font-family: 'Syne', sans-serif; font-size: 1.15rem; font-weight: 800;
   color: #1a1a2e; letter-spacing: -0.3px;
