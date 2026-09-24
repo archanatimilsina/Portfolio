@@ -3,7 +3,8 @@ from django.db import connection
 from django.db.models import F, Q
 from rest_framework import generics, status
 from .models import Challenge, ChallengeDay, PDFDocument, ProfessionalDevelopment, Project, AboutMe, DayLog, OperativeGoal, GoalDayStatus, ScrapbookStamp, OperativeNote, DreamWish, WatchlistItem, HobbyItem, MusicVibeItem, Task, BlogCategory, BlogPost, BlogComment
-from .serializers import ChallengeSerializer,PDFDocumentSerializer, InstantStatusSerializer, ProfessionalDevelopmentSerializer, ProjectSerializer, DreamWishSerializer, HobbyItemSerializer, MusicVibeItemSerializer, TaskSerializer, AboutMeSerializer, DayLogSerializer, OperativeNoteSerializer, ScrapbookStampSerializer, DreamWishSerializer, WatchlistItemSerializer, OperativeGoalSerializer, BlogCategorySerializer, BlogPostListSerializer, BlogPostDetailSerializer, BlogCommentSerializer
+from .serializers import ChallengeSerializer,PDFDocumentSerializer, InstantStatusSerializer, ProfessionalDevelopmentSerializer, ProjectSerializer, DreamWishSerializer, HobbyItemSerializer, MusicVibeItemSerializer, TaskSerializer, AboutMeSerializer, DayLogSerializer, OperativeNoteSerializer, ScrapbookStampSerializer, DreamWishSerializer, WatchlistItemSerializer, OperativeGoalSerializer, BlogCategorySerializer, BlogPostListSerializer, BlogPostDetailSerializer, BlogCommentSerializer, BlogImageUploadSerializer
+from django.core.files.storage import default_storage
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser 
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -296,6 +297,27 @@ class PDFDownloadView(APIView):
 class BlogCategoryListCreateAPIView(generics.ListCreateAPIView):
     queryset = BlogCategory.objects.all()
     serializer_class = BlogCategorySerializer
+
+
+class BlogImageUploadAPIView(APIView):
+    """Upload an image to embed inside a blog post body.
+
+    Returns a public URL that the editor drops into the Markdown as
+    ``![alt](url)``.
+    """
+
+    parser_classes = [MultiPartParser, FormParser]
+
+    def post(self, request):
+        serializer = BlogImageUploadSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        upload = serializer.validated_data['image']
+
+        name = default_storage.save(upload.name, upload)
+        return Response(
+            {'url': default_storage.url(name), 'name': name},
+            status=status.HTTP_201_CREATED,
+        )
 
 
 class BlogCategoryRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView):

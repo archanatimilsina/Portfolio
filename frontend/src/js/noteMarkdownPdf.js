@@ -121,6 +121,11 @@ export function parseInline(text) {
     const esc = rest.match(/^\\([*_~`[\]()#>\-+.!])/);
     if (esc) { buffer += esc[1]; i += esc[0].length; continue; }
 
+    // ![alt](url) — inline image syntax renders as its caption in flowing text;
+    // standalone image lines are drawn as real pictures by pdfRenderMarkdown.
+    const image = rest.match(/^!\[([^\]]*)\]\(([^)\s]+)(?:\s+"[^"]*")?\)/);
+    if (image) { flush(); runs.push({ text: image[1] || 'image', italic: true }); i += image[0].length; continue; }
+
     // [label](url)
     const link = rest.match(/^\[([^\]]+)\]\(([^)\s]+)(?:\s+"[^"]*")?\)/);
     if (link) { flush(); runs.push({ text: link[1], link: link[2] }); i += link[0].length; continue; }
@@ -139,6 +144,63 @@ export function parseInline(text) {
   return runs;
 }
 
+/* ------------------------------- images ---------------------------------- */
+
+const IMAGE_LINE_RE = /^\s*!\[([^\]]*)\]\((\S+?)(?:\s+"[^"]*")?\)\s*$/;
+
+/** Collects every image URL referenced by Markdown image syntax. */
+export function extractImageUrls(markdown) {
+  const urls = [];
+  if (!markdown) return urls;
+  const re = /!\[([^\]]*)\]\(([^)\s]+)(?:\s+"[^"]*")?\)/g;
+  let m;
+  while ((m = re.exec(markdown)) !== null) urls.push(m[2]);
+  return [...new Set(urls)];
+}
+
+/** Fetches an image and returns a canvas-normalised PNG data URL + size. */
+async function urlToImageData(url) {
+  const res = await fetch(url, { mode: 'cors' });
+  if (!res.ok) throw new Error(`Image fetch failed (${res.status})`);
+  const blob = await res.blob();
+
+  let source;
+  if (typeof createImageBitmap === 'function') {
+    source = await createImageBitmap(blob);
+  } else {
+    const dataUrl = await new Promise((resolve, reject) => {
+      const fr = new FileReader();
+      fr.onload = () => resolve(fr.result);
+      fr.onerror = reject;
+      fr.readAsDataURL(blob);
+    });
+    source = await new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => resolve(img);
+      img.onerror = reject;
+      img.src = dataUrl;
+    });
+  }
+
+  const w = source.width || source.naturalWidth || 1;
+  const h = source.height || source.naturalHeight || 1;
+  const canvas = document.createElement('canvas');
+  canvas.width = w;
+  canvas.height = h;
+  canvas.getContext('2d').drawImage(source, 0, 0, w, h);
+  return { dataUrl: canvas.toDataURL('image/png'), w, h, format: 'PNG' };
+}
+
+/** Loads every URL into a `{ url: {dataUrl,w,h} }` map, skipping failures. */
+export async function prefetchImages(urls) {
+  const map = {};
+  await Promise.all((urls || []).map(async (url) => {
+    if (!url || map[url]) return;
+    try { map[url] = await urlToImageData(url); } catch { /* skip unreachable images */ }
+  }));
+  return map;
+}
+
 /* ------------------------------ pdf helpers ------------------------------ */
 
 function pdfSetFont(doc, run, size) {
@@ -154,6 +216,35 @@ function pdfEnsureSpace(ctx, needed) {
   if (ctx.y + needed > ctx.pageH - ctx.margin) {
     ctx.doc.addPage();
     ctx.y = ctx.margin;
+  }
+}
+
+/** Draws a preloaded image centred on the page with an optional caption. */
+function pdfRenderImage(ctx, img, alt) {
+  const doc = ctx.doc;
+  const maxW = ctx.pageW - ctx.margin * 2;
+  const maxH = ctx.pageH * 0.62;
+  const scale = Math.min(maxW / img.w, maxH / img.h, 1);
+  const w = img.w * scale;
+  const h = img.h * scale;
+  const x = ctx.margin + (maxW - w) / 2;
+
+  pdfEnsureSpace(ctx, h + 18);
+  try {
+    doc.addImage(img.dataUrl, img.format || 'PNG', x, ctx.y, w, h, undefined, 'FAST');
+  } catch {
+    /* unsupported image — skip it rather than break the export */
+  }
+  ctx.y += h + 5;
+
+  if (alt) {
+    doc.setFont('helvetica', 'italic');
+    doc.setFontSize(9);
+    doc.setTextColor(130, 130, 140);
+    doc.text(pdfSafeText(alt), ctx.pageW / 2, ctx.y, { align: 'center' });
+    ctx.y += 13;
+  } else {
+    ctx.y += 8;
   }
 }
 
@@ -378,7 +469,7 @@ function pdfRenderTable(ctx, rows) {
 
 /* ------------------------------- markdown -------------------------------- */
 
-function pdfRenderMarkdown(ctx, markdown) {
+function pdfRenderMarkdown(ctx, markdown, images = {}) {
   const doc = ctx.doc;
   const size = 12;
   const lineHeight = 18;
@@ -428,6 +519,18 @@ function pdfRenderMarkdown(ctx, markdown) {
     if (inCode) { codeLines.push(line); i += 1; continue; }
 
     if (!line.trim()) { ctx.y += lineHeight * 0.6; i += 1; continue; }
+
+    // Standalone image line → draw the picture (when it was preloaded).
+    const imageLine = line.match(IMAGE_LINE_RE);
+    if (imageLine) {
+      const img = images[imageLine[2]];
+      if (img) { pdfRenderImage(ctx, img, imageLine[1]); i += 1; continue; }
+      pdfRenderRuns(ctx, [{ text: imageLine[1] || 'image', italic: true }], {
+        size, lineHeight, color: [130, 130, 140],
+      });
+      i += 1;
+      continue;
+    }
 
     // GFM pipe table: header row followed by a separator row.
     if (line.includes('|') && i + 1 < lines.length && isSeparatorRow(lines[i + 1])) {
@@ -591,4 +694,120 @@ export async function exportNotePdf({ title, body }, deps = {}) {
   const filename = `${safeFilename(displayTitle)}.pdf`;
   doc.save(filename);
   return { isMarkdown, filename };
+}
+
+/**
+ * Builds a polished, self-contained PDF for a blog post.
+ * Includes a cover banner, title, meta line, tags, inline images and page
+ * numbers. Images are fetched and normalised to PNG before rendering.
+ *
+ * @param {object} post
+ * @param {string} post.title
+ * @param {string} [post.author]
+ * @param {string} [post.category]
+ * @param {string[]} [post.tags]
+ * @param {number|string} [post.readTime]
+ * @param {string} [post.status]     'draft' | 'published'
+ * @param {string} [post.date]       ISO date string
+ * @param {string} [post.coverUrl]
+ * @param {string} [post.body]       Markdown body
+ * @param {{ jsPDF?: Function }} [deps]
+ * @returns {Promise<{ filename: string }>}
+ */
+export async function exportBlogPdf({
+  title,
+  author,
+  category,
+  tags,
+  readTime,
+  status,
+  date,
+  coverUrl,
+  body,
+} = {}, deps = {}) {
+  let JsPDF = deps.jsPDF;
+  if (!JsPDF) {
+    const mod = await import('jspdf');
+    JsPDF = mod.jsPDF;
+  }
+
+  const doc = new JsPDF({ unit: 'pt', format: 'a4' });
+  const pageW = doc.internal.pageSize.getWidth();
+  const pageH = doc.internal.pageSize.getHeight();
+  const margin = 56;
+  const ctx = { doc, y: margin, margin, pageW, pageH };
+
+  // Fetch cover + every inline image up-front (rendering is synchronous).
+  const bodyText = (body || '').replace(/\r\n?/g, '\n');
+  const inlineUrls = extractImageUrls(bodyText);
+  const images = await prefetchImages(coverUrl ? [coverUrl, ...inlineUrls] : inlineUrls);
+
+  // Cover banner
+  const cover = coverUrl ? images[coverUrl] : null;
+  if (cover) {
+    const maxW = pageW - margin * 2;
+    const h = Math.min(maxW * (cover.h / cover.w), pageH * 0.42);
+    const w = h * (cover.w / cover.h);
+    try { doc.addImage(cover.dataUrl, 'PNG', (pageW - w) / 2, ctx.y, w, h, undefined, 'FAST'); } catch { /* skip */ }
+    ctx.y += h + 20;
+  }
+
+  // Accent bar
+  doc.setFillColor(45, 106, 79);
+  doc.rect(margin, ctx.y, 34, 3.5, 'F');
+  ctx.y += 20;
+
+  // Title
+  pdfRenderRuns(
+    ctx,
+    parseInline(title || 'Untitled post').map(r => ({ ...r, bold: true })),
+    { size: 23, lineHeight: 29 }
+  );
+  ctx.y += 4;
+
+  // Meta line + tags
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(10);
+  doc.setTextColor(120, 116, 104);
+  const meta = [
+    author || 'Archana Timilsina',
+    date ? new Date(date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : null,
+    category || null,
+    readTime ? `${readTime} min read` : null,
+    status === 'draft' ? 'Draft' : null,
+  ].filter(Boolean);
+  doc.text(pdfSafeText(meta.join('  \u00b7  ')), margin, ctx.y);
+  ctx.y += 15;
+
+  if (Array.isArray(tags) && tags.length) {
+    doc.setTextColor(45, 106, 79);
+    doc.text(pdfSafeText(tags.map(t => `#${t}`).join('   ')), margin, ctx.y);
+    ctx.y += 15;
+  }
+
+  // Divider
+  doc.setDrawColor(222, 222, 226);
+  doc.setLineWidth(1);
+  doc.line(margin, ctx.y, pageW - margin, ctx.y);
+  ctx.y += 24;
+
+  // Body
+  const source = bodyText.trim() || '(This post has no content yet.)';
+  if (looksLikeMarkdown(source)) pdfRenderMarkdown(ctx, source, images);
+  else pdfRenderPlain(ctx, source);
+
+  // Footer: running title + page numbers
+  const pages = doc.internal.getNumberOfPages();
+  for (let p = 1; p <= pages; p++) {
+    doc.setPage(p);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    doc.setTextColor(150, 150, 158);
+    doc.text(pdfSafeText(`Archana Timilsina  \u00b7  ${title || ''}`), margin, pageH - 26);
+    doc.text(`${p} / ${pages}`, pageW - margin, pageH - 26, { align: 'right' });
+  }
+
+  const filename = `${safeFilename(title || 'blog-post')}.pdf`;
+  doc.save(filename);
+  return { filename };
 }

@@ -1,11 +1,13 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import styled, { createGlobalStyle, keyframes } from 'styled-components';
+import { exportBlogPdf } from '../../js/noteMarkdownPdf';
 
 const API_BASE = import.meta.env.VITE_API_URL;
 const BASE = `${API_BASE}/api`;
 const POSTS = `${BASE}/blog/posts/`;
 const CATEGORIES = `${BASE}/blog/categories/`;
 const COMMENTS = `${BASE}/blog/comments/`;
+const IMAGES = `${BASE}/blog/images/`;
 const LIKED_KEY = 'blog:liked-ids';
 
 const C = {
@@ -255,6 +257,7 @@ const I = {
   edit: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9" /><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z" /></svg>,
   trash: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6" /><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" /><path d="M10 11v6M14 11v6" /></svg>,
   image: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="8.5" cy="8.5" r="1.5" /><polyline points="21 15 16 10 5 21" /></svg>,
+  download: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>,
   send: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13" /><polygon points="22 2 15 22 11 13 2 9 22 2" /></svg>,
 };
 
@@ -295,7 +298,12 @@ export default function Blog({ onBack }) {
   const [liked, setLiked] = useState(() => loadIdSet(LIKED_KEY));
 
   const fileInputRef = useRef(null);
+  const inlineInputRef = useRef(null);
+  const contentRef = useRef(null);
   const viewedRef = useRef(new Set());
+
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [pdfBusy, setPdfBusy] = useState(false);
 
   const toast = useCallback((msg, err = false) => {
     const id = Date.now() + Math.random();
@@ -461,6 +469,109 @@ export default function Blog({ onBack }) {
     clearCover();
     setRemoveCover(true);
     setDirty(true);
+  };
+
+  /* --- inline images --------------------------------------------- */
+  const wrapSelection = (before, after = before) => {
+    const el = contentRef.current;
+    if (!el) { insertAtCursor(`${before}text${after}`); return; }
+    const start = el.selectionStart ?? 0;
+    const end = el.selectionEnd ?? start;
+    const selected = el.value.slice(start, end) || 'text';
+    const next = el.value.slice(0, start) + before + selected + after + el.value.slice(end);
+    updateField('content', next);
+    requestAnimationFrame(() => {
+      el.focus();
+      el.setSelectionRange(start + before.length, start + before.length + selected.length);
+    });
+  };
+
+  const insertAtCursor = (snippet) => {
+    const el = contentRef.current;
+    if (!el) { updateField('content', `${form.content || ''}${snippet}`); return; }
+    const start = el.selectionStart ?? el.value.length;
+    const end = el.selectionEnd ?? el.value.length;
+    const next = el.value.slice(0, start) + snippet + el.value.slice(end);
+    updateField('content', next);
+    requestAnimationFrame(() => {
+      el.focus();
+      const pos = start + snippet.length;
+      el.setSelectionRange(pos, pos);
+    });
+  };
+
+  const uploadInlineImage = async (file) => {
+    if (!file || !file.type.startsWith('image/')) {
+      toast('Only image files can be inserted.', true);
+      return;
+    }
+    setUploadingImage(true);
+    try {
+      const fd = new FormData();
+      fd.append('image', file);
+      const res = await fetch(IMAGES, { method: 'POST', body: fd });
+      if (!res.ok) { toast(await parseError(res), true); return; }
+      const { url } = await res.json();
+      const alt = (file.name || 'image').replace(/\.[^.]+$/, '') || 'image';
+      insertAtCursor(`\n\n![${alt}](${url})\n\n`);
+      setActiveTab('write');
+      toast('Image added to your story.');
+    } catch {
+      toast('Network error — could not upload image.', true);
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
+  const onPickInlineImage = (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (file) uploadInlineImage(file);
+  };
+
+  const onPasteContent = (e) => {
+    if (!isEditing) return;
+    const items = e.clipboardData?.items || [];
+    const imgItem = Array.from(items).find((it) => it.type?.startsWith('image/'));
+    if (imgItem) {
+      e.preventDefault();
+      const file = imgItem.getAsFile();
+      if (file) uploadInlineImage(file);
+    }
+  };
+
+  const onDropContent = (e) => {
+    if (!isEditing) return;
+    const file = e.dataTransfer?.files?.[0];
+    if (file && file.type.startsWith('image/')) {
+      e.preventDefault();
+      uploadInlineImage(file);
+    }
+  };
+
+  /* --- PDF export ------------------------------------------------ */
+  const handleDownloadPdf = async () => {
+    if (!form.title.trim()) { toast('Add a title before exporting.', true); return; }
+    setPdfBusy(true);
+    try {
+      const categoryName = categories.find((c) => String(c.id) === String(form.category))?.name || null;
+      await exportBlogPdf({
+        title: form.title,
+        author: form.author,
+        category: categoryName,
+        tags: parseTags(form.tags),
+        readTime: Math.max(1, Math.round((form.content || '').split(/\s+/).filter(Boolean).length / 200)),
+        status: form.status,
+        date: post?.published_at || post?.created_at || new Date().toISOString(),
+        coverUrl: coverPreview || (!removeCover && post?.cover_image_url) || null,
+        body: form.content,
+      });
+      toast('PDF downloaded.');
+    } catch {
+      toast('Could not build the PDF.', true);
+    } finally {
+      setPdfBusy(false);
+    }
   };
 
   const buildPayload = () => {
@@ -798,6 +909,9 @@ export default function Blog({ onBack }) {
               </EditorHeading>
               <EditorHeaderActions>
                 {activeId && <IconBtn title="Delete post" $danger onClick={() => setConfirmDelete(post || { id: activeId, title: form.title })}>{I.trash}</IconBtn>}
+                <GhostBtn type="button" onClick={handleDownloadPdf} disabled={pdfBusy}>
+                  {pdfBusy ? <Spinner /> : I.download} {pdfBusy ? 'Preparing…' : 'PDF'}
+                </GhostBtn>
                 <GhostBtn type="button" onClick={backToList}>Close</GhostBtn>
                 {mode === 'view' ? (
                   <PrimaryBtn type="button" onClick={() => setMode('edit')}>{I.edit} Edit</PrimaryBtn>
@@ -895,12 +1009,32 @@ export default function Blog({ onBack }) {
                   <MetaInline>{I.clock} {Math.max(1, Math.round((form.content || '').split(/\s+/).filter(Boolean).length / 200))} min read · {(form.content || '').split(/\s+/).filter(Boolean).length} words</MetaInline>
                 </ContentHeader>
 
+                {activeTab === 'write' && isEditing && (
+                  <MdToolbar>
+                    <MdToolBtn type="button" title="Bold" onClick={() => wrapSelection('**', '**')}>B</MdToolBtn>
+                    <MdToolBtn type="button" title="Italic" onClick={() => wrapSelection('*', '*')}><em>I</em></MdToolBtn>
+                    <MdToolBtn type="button" title="Heading" onClick={() => insertAtCursor('\n## ')}>H</MdToolBtn>
+                    <MdToolBtn type="button" title="Bullet list" onClick={() => insertAtCursor('\n- ')}>•</MdToolBtn>
+                    <MdToolBtn type="button" title="Quote" onClick={() => insertAtCursor('\n> ')}>❝</MdToolBtn>
+                    <MdToolBtn type="button" title="Inline code" onClick={() => wrapSelection('`', '`')}>{'</>'}</MdToolBtn>
+                    <MdToolBtn type="button" title="Link" onClick={() => insertAtCursor('[text](https://)')}>🔗</MdToolBtn>
+                    <Spacer />
+                    <MdToolBtn type="button" $accent onClick={() => inlineInputRef.current?.click()} disabled={uploadingImage}>
+                      {I.image} {uploadingImage ? 'Uploading…' : 'Insert image'}
+                    </MdToolBtn>
+                    <input ref={inlineInputRef} type="file" accept="image/*" hidden onChange={onPickInlineImage} />
+                  </MdToolbar>
+                )}
+
                 {activeTab === 'write' ? (
                   <ContentArea
+                    ref={contentRef}
                     value={form.content}
-                    placeholder="Write your story in markdown…\n\n# Heading\n**bold**, *italic*, `code`, [links](https://…), lists and > quotes"
+                    placeholder="Write your story in markdown…\n\n# Heading\n**bold**, *italic*, `code`, [links](https://…), lists and > quotes\n\nTip: paste or drop an image to insert it inline."
                     readOnly={!isEditing}
                     onChange={(e) => updateField('content', e.target.value)}
+                    onPaste={onPasteContent}
+                    onDrop={onDropContent}
                   />
                 ) : (
                   <PreviewPane><Markdown text={form.content} /></PreviewPane>
@@ -1351,6 +1485,22 @@ const MetaInline = styled.span`
   display:inline-flex; align-items:center; gap:.3rem;
   font-size:.72rem; font-weight:600; color:${C.soft};
 `;
+const MdToolbar = styled.div`
+  display:flex; align-items:center; gap:.35rem; flex-wrap:wrap;
+  padding:.4rem .5rem; margin-bottom:.55rem; border-radius:10px;
+  border:1.5px solid ${C.border}; background:${C.muted};
+`;
+const MdToolBtn = styled.button`
+  display:inline-flex; align-items:center; gap:.35rem;
+  font-family:inherit; font-size:.76rem; font-weight:800; line-height:1;
+  padding:.4rem .58rem; border-radius:8px; cursor:pointer;
+  border:1.5px solid ${p => (p.$accent ? C.green : 'transparent')};
+  background:${p => (p.$accent ? C.green : C.white)};
+  color:${p => (p.$accent ? '#fff' : C.dark)};
+  transition:all .15s ease;
+  &:hover:not(:disabled) { transform:translateY(-1px); border-color:${C.green}; }
+  &:disabled { opacity:.6; cursor:default; }
+`;
 const ContentArea = styled.textarea`
   width:100%; min-height:420px; font-family:'SF Mono', ui-monospace, Menlo, monospace;
   font-size:.9rem; line-height:1.7; color:${C.dark};
@@ -1378,7 +1528,10 @@ const MdBody = styled.div`
   pre { background:${C.dark}; color:#e8e8ef; border-radius:10px; padding:.9rem 1rem; overflow-x:auto; margin:.9rem 0; }
   pre code { background:transparent; color:inherit; padding:0; }
   blockquote { border-left:3px solid ${C.green}; background:${C.greenLt}; margin:.9rem 0; padding:.6rem .9rem; border-radius:0 8px 8px 0; color:${C.soft}; }
-  img { max-width:100%; border-radius:10px; margin:.5rem 0; }
+  img { display:block; max-width:100%; border-radius:14px; margin:1.1rem auto;
+        box-shadow:0 12px 30px rgba(26,26,46,.16); border:1px solid ${C.border};
+        transition:transform .2s ease, box-shadow .2s ease; }
+  img:hover { transform:translateY(-2px) scale(1.005); box-shadow:0 18px 40px rgba(26,26,46,.22); }
   hr { border:none; border-top:1.5px solid ${C.border}; margin:1.4rem 0; }
 `;
 

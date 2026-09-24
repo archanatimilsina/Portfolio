@@ -420,6 +420,18 @@ class TagsField(serializers.Field):
         return value or []
 
 
+class BlogImageUploadSerializer(serializers.Serializer):
+    """Validates an inline image uploaded from the blog editor."""
+
+    image = serializers.ImageField()
+
+    def validate_image(self, value):
+        max_bytes = 8 * 1024 * 1024  # 8 MB
+        if value.size > max_bytes:
+            raise serializers.ValidationError("Images must be smaller than 8 MB.")
+        return value
+
+
 class BlogCategorySerializer(serializers.ModelSerializer):
     post_count = serializers.IntegerField(source='posts.count', read_only=True)
 
