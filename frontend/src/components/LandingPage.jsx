@@ -336,14 +336,16 @@ function CredentialsSection({ onCardClick }) {
 
 /* ---------------------------------------------------------------
    The secret area is opened through a deliberately rare interaction:
-   press & HOLD the tiny green dot, then triple-tap it. Both steps must
+   press & HOLD the tiny green dot, then double-tap it. Both steps must
    happen in that order, so stumbling onto it by accident is essentially
-   impossible. The trigger only reveals the PIN pad — the real check is
-   done server-side (verify-secret).
+   impossible. A double-tap is used on purpose — the global Gesture
+   Navigator opens its drawing canvas on a TRIPLE-tap, so two taps never
+   collide with it. The trigger only reveals the PIN pad — the real check
+   is done server-side (verify-secret).
 ---------------------------------------------------------------- */
 const SECRET_HOLD_MS = 1200; // how long the dot must be held
-const SECRET_TAP_MS  = 1200; // window the three taps must fall inside
-const SECRET_TAPS    = 3;
+const SECRET_TAP_MS  = 1200; // window the taps must fall inside
+const SECRET_TAPS    = 2;    // a double-tap (keep < 3 to avoid gesture nav)
 
 function SecretTrigger({ onUnlock }) {
   const holdTimer   = useRef(null);
@@ -358,6 +360,9 @@ function SecretTrigger({ onUnlock }) {
   }, []);
 
   const onPointerDown = (e) => {
+    // Keep the global Gesture Navigator from counting these taps — otherwise
+    // tapping the dot 3× would open its drawing canvas.
+    e.stopPropagation();
     e.preventDefault();
     heldRef.current = false;
     clearTimeout(holdTimer.current);
