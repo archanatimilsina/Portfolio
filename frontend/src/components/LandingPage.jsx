@@ -793,20 +793,32 @@ const PinOverlay = styled.div`
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 1.25rem;
+  padding: max(1rem, env(safe-area-inset-top)) max(1rem, env(safe-area-inset-right))
+           max(1rem, env(safe-area-inset-bottom)) max(1rem, env(safe-area-inset-left));
+  overflow-y: auto;
   animation: ${overlayFadeIn} 0.2s ease forwards;
 `;
 const PinPanel = styled.div`
   position: relative;
   width: 100%;
   max-width: 330px;
+  max-height: calc(100vh - 2rem);
+  max-height: calc(100dvh - 2rem);
+  overflow-y: auto;
   background: #ffffff;
   border: 2px solid #1a1a2e;
   border-radius: 24px;
   padding: 1.9rem 1.7rem 1.6rem;
   text-align: center;
   box-shadow: 0 30px 70px rgba(26, 26, 46, 0.28);
+  scrollbar-width: none;
+  &::-webkit-scrollbar { display: none; }
   animation: ${(p) => (p.$shake ? wrongShake : modalSlideIn)} 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  @media (max-height: 620px) {
+    padding: 1.35rem 1.25rem 1.15rem;
+    border-radius: 20px;
+  }
 `;
 const PinClose = styled.button`
   position: absolute;

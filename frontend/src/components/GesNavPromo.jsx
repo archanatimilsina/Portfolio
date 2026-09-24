@@ -214,17 +214,24 @@ const Wrap = styled.div`
   bottom: 1.5rem;
   z-index: 950;
   width: min(370px, calc(100vw - 2rem));
+  max-height: calc(100vh - 3rem);
+  max-height: calc(100dvh - 3rem);
+  display: flex;
+  flex-direction: column;
   animation: ${cardIn} 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) both;
 
   @media (max-width: 560px) {
     right: 1rem;
     left: 1rem;
-    bottom: 1rem;
+    bottom: max(1rem, env(safe-area-inset-bottom));
     width: auto;
+    max-height: calc(100vh - 2rem);
+    max-height: calc(100dvh - 2rem);
   }
 `;
 
 const ProgressTrack = styled.div`
+  flex-shrink: 0;
   height: 4px;
   margin: 0 1rem -2px;
   background: #eceae3;
@@ -248,7 +255,15 @@ const Card = styled.div`
   border-radius: 20px;
   padding: 1.25rem 1.35rem 1.4rem;
   box-shadow: 0 22px 55px rgba(26, 26, 46, 0.18);
-  overflow: hidden;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: #d8d4cc transparent;
+
+  &::-webkit-scrollbar { width: 6px; }
+  &::-webkit-scrollbar-thumb { background: #d8d4cc; border-radius: 100px; }
 
   &::before {
     content: '';
@@ -258,6 +273,10 @@ const Card = styled.div`
     height: 220px;
     background: radial-gradient(circle, rgba(82, 214, 138, 0.22), transparent 70%);
     pointer-events: none;
+  }
+
+  @media (max-width: 560px) {
+    padding: 1.15rem 1.15rem 1.25rem;
   }
 `;
 
@@ -461,6 +480,10 @@ const GestureGrid = styled.div`
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 0.5rem;
+
+  @media (max-width: 380px) {
+    grid-template-columns: repeat(2, 1fr);
+  }
 `;
 const GestureTile = styled.div`
   display: flex;
