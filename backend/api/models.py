@@ -688,6 +688,15 @@ class BlogCategory(models.Model):
             self.slug = slug
         super().save(*args, **kwargs)
 
+    @property
+    def post_count(self):
+        cached = self.__dict__.get('post_count')
+        return cached if cached is not None else self.posts.count()
+
+    @post_count.setter
+    def post_count(self, value):
+        self.__dict__['post_count'] = value
+
     def __str__(self):
         return self.name
 
@@ -743,7 +752,12 @@ class BlogPost(models.Model):
 
     @property
     def comment_count(self):
-        return self.comments.count()
+        cached = self.__dict__.get('comment_count')
+        return cached if cached is not None else self.comments.count()
+
+    @comment_count.setter
+    def comment_count(self, value):
+        self.__dict__['comment_count'] = value
 
     def _build_unique_slug(self):
         base = slugify(self.title)[:250] or 'post'

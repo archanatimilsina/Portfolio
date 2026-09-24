@@ -33,10 +33,6 @@ const cardIn = keyframes`
   from { opacity: 0; transform: translateY(28px) scale(.94); }
   to   { opacity: 1; transform: translateY(0) scale(1); }
 `;
-const floaty = keyframes`
-  0%, 100% { transform: translateY(0); }
-  50%      { transform: translateY(-6px); }
-`;
 const bounce = keyframes`
   0%, 100% { transform: translateY(0) rotate(-6deg); }
   50%      { transform: translateY(-8px) rotate(6deg); }
@@ -248,7 +244,6 @@ const Card = styled.div`
   border-radius: 20px;
   padding: 1.25rem 1.35rem 1.4rem;
   box-shadow: 0 22px 55px rgba(26, 26, 46, 0.18);
-  animation: ${floaty} 5s ease-in-out infinite;
   overflow: hidden;
 
   &::before {
@@ -323,7 +318,7 @@ const Hand = styled.span`
   font-size: 2rem;
   line-height: 1;
   display: inline-block;
-  animation: ${bounce} 1.6s ease-in-out infinite;
+  animation: ${bounce} 1.6s ease-in-out 3;
 `;
 const FloatingArt = styled.div`
   flex: 1;
@@ -342,7 +337,7 @@ const ArtPath = styled.path`
   stroke-width: 5;
   stroke-dasharray: 340;
   stroke-dashoffset: 340;
-  animation: ${drawStroke} 6s ease-in-out infinite;
+  animation: ${drawStroke} 3s ease-in-out 1 both;
   animation-delay: ${(p) => p.$delay}s;
   &:nth-of-type(2n) { stroke: #52d68a; }
 `;
@@ -363,7 +358,7 @@ const Title = styled.h3`
     -webkit-background-clip: text;
     background-clip: text;
     -webkit-text-fill-color: transparent;
-    animation: ${shimmer} 3.5s linear infinite;
+    animation: ${shimmer} 2.5s linear 2;
   }
 `;
 
@@ -491,7 +486,7 @@ const TilePath = styled.path`
   stroke-width: 6;
   stroke-dasharray: 340;
   stroke-dashoffset: 340;
-  animation: ${drawStroke} 3.2s ease-in-out infinite;
+  animation: ${drawStroke} 2.4s ease-in-out 1 both;
   animation-delay: ${(p) => p.$delay}s;
 `;
 const TileText = styled.div`

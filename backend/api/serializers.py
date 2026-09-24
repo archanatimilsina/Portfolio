@@ -433,7 +433,7 @@ class BlogImageUploadSerializer(serializers.Serializer):
 
 
 class BlogCategorySerializer(serializers.ModelSerializer):
-    post_count = serializers.IntegerField(source='posts.count', read_only=True)
+    post_count = serializers.IntegerField(read_only=True)
 
     class Meta:
         model = BlogCategory

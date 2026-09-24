@@ -1,6 +1,6 @@
 from django.shortcuts import render
 from django.db import connection
-from django.db.models import F, Q
+from django.db.models import F, Q, Count
 from rest_framework import generics, status
 from .models import Challenge, ChallengeDay, PDFDocument, ProfessionalDevelopment, Project, AboutMe, DayLog, OperativeGoal, GoalDayStatus, ScrapbookStamp, OperativeNote, DreamWish, WatchlistItem, HobbyItem, MusicVibeItem, Task, BlogCategory, BlogPost, BlogComment
 from .serializers import ChallengeSerializer,PDFDocumentSerializer, InstantStatusSerializer, ProfessionalDevelopmentSerializer, ProjectSerializer, DreamWishSerializer, HobbyItemSerializer, MusicVibeItemSerializer, TaskSerializer, AboutMeSerializer, DayLogSerializer, OperativeNoteSerializer, ScrapbookStampSerializer, DreamWishSerializer, WatchlistItemSerializer, OperativeGoalSerializer, BlogCategorySerializer, BlogPostListSerializer, BlogPostDetailSerializer, BlogCommentSerializer, BlogImageUploadSerializer
@@ -295,8 +295,10 @@ class PDFDownloadView(APIView):
 
 
 class BlogCategoryListCreateAPIView(generics.ListCreateAPIView):
-    queryset = BlogCategory.objects.all()
     serializer_class = BlogCategorySerializer
+
+    def get_queryset(self):
+        return BlogCategory.objects.annotate(post_count=Count('posts'))
 
 
 class BlogImageUploadAPIView(APIView):
@@ -321,8 +323,10 @@ class BlogImageUploadAPIView(APIView):
 
 
 class BlogCategoryRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView):
-    queryset = BlogCategory.objects.all()
     serializer_class = BlogCategorySerializer
+
+    def get_queryset(self):
+        return BlogCategory.objects.annotate(post_count=Count('posts'))
 
 
 class BlogPostListCreateAPIView(generics.ListCreateAPIView):
@@ -337,7 +341,7 @@ class BlogPostListCreateAPIView(generics.ListCreateAPIView):
         return BlogPostListSerializer
 
     def get_queryset(self):
-        qs = BlogPost.objects.select_related('category').all()
+        qs = BlogPost.objects.select_related('category').annotate(comment_count=Count('comments'))
         params = self.request.query_params
 
         status_param = params.get('status')
@@ -391,9 +395,15 @@ class BlogPostListCreateAPIView(generics.ListCreateAPIView):
 
 
 class BlogPostRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView):
-    queryset = BlogPost.objects.select_related('category').prefetch_related('comments')
     serializer_class = BlogPostListSerializer
     parser_classes = [MultiPartParser, FormParser, JSONParser]
+
+    def get_queryset(self):
+        return (
+            BlogPost.objects.select_related('category')
+            .prefetch_related('comments')
+            .annotate(comment_count=Count('comments'))
+        )
 
     def get_serializer_class(self):
         if self.request.method in ('PUT', 'PATCH'):

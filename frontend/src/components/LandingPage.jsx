@@ -1,11 +1,12 @@
-import React, { useState, useEffect, useRef, useSyncExternalStore } from 'react';
+import React, { useState, useEffect, useRef, useSyncExternalStore, lazy, Suspense } from 'react';
 import styled, { createGlobalStyle, keyframes } from 'styled-components';
 import charImg from '../assets/img/397192bdf6375902aaab9436359d2dc0.jpg';
 import { getGestureNavStatus, setGestureNavStatus, subscribeGestureNav } from '../js/gestureNavState';
 
-import ProjectSpecificationPage from './projectDescriptionPage';
-import ProfessionalCredential from './ProfessionalCredential';
-import SecretWorld from '../ArchanaArea/components/MyArea';
+// Heavy sub-apps are code-split so they never weigh down the landing bundle.
+const ProjectSpecificationPage = lazy(() => import('./projectDescriptionPage'));
+const ProfessionalCredential = lazy(() => import('./ProfessionalCredential'));
+const SecretWorld = lazy(() => import('../ArchanaArea/components/MyArea'));
 import GesNavPromo from './GesNavPromo';
 export const revalidate = 60;
 const API_BASE = import.meta.env.VITE_API_URL;
@@ -382,7 +383,9 @@ useEffect(() => {
     return (
       <>
         <GlobalStyle />
-        <SecretWorld onBack={() => { setShowSecretWorld(false); setShowSecretGate(false); }} />
+        <Suspense fallback={<RouteLoader />}>
+          <SecretWorld onBack={() => { setShowSecretWorld(false); setShowSecretGate(false); }} />
+        </Suspense>
       </>
     );
   }
@@ -401,7 +404,9 @@ useEffect(() => {
     return (
       <>
         <GlobalStyle />
-        <ProjectSpecificationPage projectData={activeItem} onBack={clearActive} />
+        <Suspense fallback={<RouteLoader />}>
+          <ProjectSpecificationPage projectData={activeItem} onBack={clearActive} />
+        </Suspense>
       </>
     );
   }
@@ -409,7 +414,9 @@ useEffect(() => {
     return (
       <>
         <GlobalStyle />
-        <ProfessionalCredential credentialData={activeItem} onBack={clearActive} />
+        <Suspense fallback={<RouteLoader />}>
+          <ProfessionalCredential credentialData={activeItem} onBack={clearActive} />
+        </Suspense>
       </>
     );
   }
@@ -530,6 +537,14 @@ const shimmerAnim = keyframes`
 `;
 
 
+
+const RouteLoader = styled.div`
+  min-height: 100vh;
+  display: flex; align-items: center; justify-content: center;
+  background: #f6f5f0; color: #7a7567;
+  font-family: 'Syne', system-ui, sans-serif;
+  font-size: .9rem; font-weight: 600; letter-spacing: .5px;
+`;
 
 const GlobalStyle = createGlobalStyle`
   @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap');

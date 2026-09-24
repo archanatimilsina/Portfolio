@@ -10,6 +10,35 @@ const COMMENTS = `${BASE}/blog/comments/`;
 const IMAGES = `${BASE}/blog/images/`;
 const LIKED_KEY = 'blog:liked-ids';
 
+/* Downscale + re-encode images in the browser before upload.
+   Keeps storage small and uploads fast without visible quality loss. */
+const compressImage = async (file, maxDim = 1600, quality = 0.82) => {
+  if (!file || !file.type.startsWith('image/')) return file;
+  if (file.type === 'image/gif' || file.type === 'image/svg+xml') return file;
+  try {
+    const bitmap = await createImageBitmap(file);
+    const { width: w, height: h } = bitmap;
+    const scale = Math.min(1, maxDim / Math.max(w, h));
+    // Already small and light — leave it untouched.
+    if (scale === 1 && file.size < 350 * 1024) { bitmap.close?.(); return file; }
+    const width = Math.max(1, Math.round(w * scale));
+    const height = Math.max(1, Math.round(h * scale));
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, width, height);
+    ctx.drawImage(bitmap, 0, 0, width, height);
+    bitmap.close?.();
+    const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/jpeg', quality));
+    if (!blob || blob.size >= file.size) return file;
+    return new File([blob], (file.name || 'image').replace(/\.[^.]+$/, '') + '.jpg', { type: 'image/jpeg' });
+  } catch {
+    return file;
+  }
+};
+
 const C = {
   bg:      '#f6f5f0',
   white:   '#ffffff',
@@ -455,9 +484,10 @@ export default function Blog({ onBack }) {
     setDirty(true);
   };
 
-  const onPickCover = (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const onPickCover = async (e) => {
+    const raw = e.target.files?.[0];
+    if (!raw) return;
+    const file = await compressImage(raw);
     if (coverPreview) URL.revokeObjectURL(coverPreview);
     setCoverFile(file);
     setCoverPreview(URL.createObjectURL(file));
@@ -507,8 +537,9 @@ export default function Blog({ onBack }) {
     }
     setUploadingImage(true);
     try {
+      const compressed = await compressImage(file);
       const fd = new FormData();
-      fd.append('image', file);
+      fd.append('image', compressed);
       const res = await fetch(IMAGES, { method: 'POST', body: fd });
       if (!res.ok) { toast(await parseError(res), true); return; }
       const { url } = await res.json();
