@@ -9,16 +9,16 @@ const styles = `
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
   :root {
-    --dark:       #0f172a;
-    --soft:       #747c8c;
-    --border:     #d4cec3;
-    --accent:     #e6e1d6;
-    --green:      #10b981;
-    --green-dim:  #0d9268;
-    --danger:     #e53e3e;
+    --dark:       #1a1a2e;
+    --soft:       #7a7567;
+    --border:     #d8d4cc;
+    --accent:     #eceae3;
+    --green:      #2d6a4f;
+    --green-dim:  #245741;
+    --danger:     #c0392b;
     --white:      #ffffff;
-    --paper:      #fcfaf8;
-    --bg:         #f6f3ee;
+    --paper:      #ffffff;
+    --bg:         #f6f5f0;
   }
 
   body {

@@ -6,16 +6,16 @@ const GlobalStyle = createGlobalStyle`
   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 
   :root {
-    --bg-dark:    #090B10;
-    --bg-panel:   #11141D;
-    --bg-input:   rgba(255,255,255,0.03);
-    --border:     rgba(255,255,255,0.08);
-    --text-primary:   #F1F5F9;
-    --text-secondary: #94A3B8;
-    --accent:     #14B8A6;
-    --accent-glow:rgba(20,184,166,0.3);
-    --danger:     #EF4444;
-    --success:    #10B981;
+    --bg-dark:    #f6f5f0;
+    --bg-panel:   #ffffff;
+    --bg-input:   #f0eee7;
+    --border:     #d8d4cc;
+    --text-primary:   #1a1a2e;
+    --text-secondary: #7a7567;
+    --accent:     #2d6a4f;
+    --accent-glow:rgba(45,106,79,0.3);
+    --danger:     #c0392b;
+    --success:    #52d68a;
     --ease:       cubic-bezier(0.23,1,0.32,1);
   }
 

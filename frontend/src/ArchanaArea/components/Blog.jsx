@@ -298,6 +298,10 @@ export default function Blog({ onBack }) {
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [listError, setListError] = useState('');
+  const [stats, setStats] = useState({ total: 0, published: 0, drafts: 0, views: 0, likes: 0 });
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
+  const [loadingMore, setLoadingMore] = useState(false);
 
   const [query, setQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -357,59 +361,55 @@ export default function Blog({ onBack }) {
     }
   }, []);
 
-  const fetchPosts = useCallback(async () => {
-    setLoading(true);
-    setListError('');
+  const fetchStats = useCallback(async () => {
     try {
-      const res = await fetch(POSTS, { cache: 'no-store' });
-      if (!res.ok) throw new Error(`Server returned ${res.status}`);
-      const data = await res.json();
-      setPosts(Array.isArray(data) ? data : data.results || []);
-    } catch (e) {
-      setListError(e.message || 'Could not load posts.');
-    } finally {
-      setLoading(false);
+      const res = await fetch(`${POSTS}stats/`, { cache: 'no-store' });
+      if (res.ok) setStats(await res.json());
+    } catch {
+      /* non-fatal */
     }
   }, []);
 
+  // Server-side filtering + pagination — the client only ever holds one page.
+  const fetchPosts = useCallback(async (pageNum = 1, append = false) => {
+    if (append) setLoadingMore(true);
+    else { setLoading(true); setListError(''); }
+    try {
+      const params = new URLSearchParams();
+      if (statusFilter !== 'all') params.set('status', statusFilter);
+      if (categoryFilter !== 'all') params.set('category', categoryFilter);
+      if (query.trim()) params.set('search', query.trim());
+      if (sort) params.set('ordering', sort);
+      params.set('page', String(pageNum));
+
+      const res = await fetch(`${POSTS}?${params.toString()}`, { cache: 'no-store' });
+      if (!res.ok) throw new Error(`Server returned ${res.status}`);
+      const data = await res.json();
+      const results = Array.isArray(data) ? data : data.results || [];
+      setPosts((prev) => (append ? [...prev, ...results] : results));
+      setTotal(Array.isArray(data) ? results.length : (data.count ?? results.length));
+      setPage(pageNum);
+    } catch (e) {
+      if (append) toast('Could not load more posts.', true);
+      else setListError(e.message || 'Could not load posts.');
+    } finally {
+      setLoading(false);
+      setLoadingMore(false);
+    }
+  }, [statusFilter, categoryFilter, query, sort, toast]);
+
+  // Debounced refetch whenever the search/filter/sort changes.
   useEffect(() => {
-    fetchPosts();
-    fetchCategories();
-  }, [fetchPosts, fetchCategories]);
+    const t = setTimeout(() => fetchPosts(1, false), 280);
+    return () => clearTimeout(t);
+  }, [fetchPosts]);
 
-  /* -------------------------------------------------------------- */
-  /* derived list                                                   */
-  /* -------------------------------------------------------------- */
-  const visiblePosts = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    let list = posts.filter((p) => {
-      if (statusFilter !== 'all' && p.status !== statusFilter) return false;
-      if (categoryFilter !== 'all' && String(p.category || '') !== String(categoryFilter)) return false;
-      if (!q) return true;
-      const hay = [p.title, p.excerpt, (p.tags || []).join(' '), p.author].join(' ').toLowerCase();
-      return hay.includes(q);
-    });
+  useEffect(() => { fetchCategories(); fetchStats(); }, [fetchCategories, fetchStats]);
 
-    list = [...list].sort((a, b) => {
-      if (a.is_featured !== b.is_featured) return a.is_featured ? -1 : 1;
-      switch (sort) {
-        case 'oldest': return new Date(a.created_at) - new Date(b.created_at);
-        case 'popular': return (b.views || 0) - (a.views || 0);
-        case 'liked': return (b.likes || 0) - (a.likes || 0);
-        case 'title': return (a.title || '').localeCompare(b.title || '');
-        default: return new Date(b.created_at) - new Date(a.created_at);
-      }
-    });
-    return list;
-  }, [posts, query, statusFilter, categoryFilter, sort]);
-
-  const stats = useMemo(() => ({
-    total: posts.length,
-    published: posts.filter((p) => p.status === 'published').length,
-    drafts: posts.filter((p) => p.status === 'draft').length,
-    views: posts.reduce((sum, p) => sum + (p.views || 0), 0),
-    likes: posts.reduce((sum, p) => sum + (p.likes || 0), 0),
-  }), [posts]);
+  const loadMore = () => {
+    if (loadingMore || posts.length >= total) return;
+    fetchPosts(page + 1, true);
+  };
 
   /* -------------------------------------------------------------- */
   /* editor actions                                                 */
@@ -682,6 +682,7 @@ export default function Blog({ onBack }) {
       });
 
       toast(isNew ? 'Post created ✓' : 'Post saved ✓');
+      fetchStats();
       return saved;
     } catch {
       setSaveError('Network error — changes were not saved.');
@@ -706,6 +707,8 @@ export default function Blog({ onBack }) {
         return;
       }
       setPosts((prev) => prev.filter((p) => p.id !== id));
+      setTotal((t) => Math.max(0, t - 1));
+      fetchStats();
       setConfirmDelete(null);
       if (activeId === id) {
         setMode(null);
@@ -870,7 +873,7 @@ export default function Blog({ onBack }) {
 
             {listError && (
               <ErrorBanner>
-                {listError} <RetryBtn onClick={fetchPosts}>Retry</RetryBtn>
+                {listError} <RetryBtn onClick={() => fetchPosts(1, false)}>Retry</RetryBtn>
               </ErrorBanner>
             )}
 
@@ -878,20 +881,21 @@ export default function Blog({ onBack }) {
               <SkeletonGrid>
                 {Array.from({ length: 6 }).map((_, i) => <SkeletonCard key={i} />)}
               </SkeletonGrid>
-            ) : visiblePosts.length === 0 ? (
+            ) : posts.length === 0 ? (
               <EmptyState>
                 <EmptyIcon>📝</EmptyIcon>
-                <EmptyTitle>{posts.length === 0 ? 'No posts yet' : 'No posts match your filters'}</EmptyTitle>
+                <EmptyTitle>{total === 0 ? 'No posts yet' : 'No posts match your filters'}</EmptyTitle>
                 <EmptyDesc>
-                  {posts.length === 0
+                  {total === 0
                     ? 'Write your first story — it only takes a minute.'
                     : 'Try a different search or clear the filters.'}
                 </EmptyDesc>
                 <NewBtn type="button" onClick={startNew}>{I.plus} Write a post</NewBtn>
               </EmptyState>
             ) : (
+              <>
               <PostGrid>
-                {visiblePosts.map((p, i) => (
+                {posts.map((p, i) => (
                   <PostCard key={p.id} $delay={i * 0.04} onClick={() => openPost(p)}>
                     <CardCover $url={p.cover_image_url} $color={p.category_color || C.green}>
                       {!p.cover_image_url && <CoverLetter>{(p.title || '?').charAt(0).toUpperCase()}</CoverLetter>}
@@ -924,6 +928,14 @@ export default function Blog({ onBack }) {
                   </PostCard>
                 ))}
               </PostGrid>
+              {posts.length < total && (
+                <LoadMoreRow>
+                  <LoadMoreBtn type="button" onClick={loadMore} disabled={loadingMore}>
+                    {loadingMore ? 'Loading…' : `Load more (${posts.length}/${total})`}
+                  </LoadMoreBtn>
+                </LoadMoreRow>
+              )}
+              </>
             )}
           </>
         )}
@@ -1307,6 +1319,19 @@ const PostGrid = styled.div`
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   gap: 1.1rem;
   max-width: 1280px; margin: 0 auto; padding: .5rem 2rem 2rem;
+`;
+const LoadMoreRow = styled.div`
+  display: flex; justify-content: center;
+  max-width: 1280px; margin: 0 auto; padding: 0 2rem 4rem;
+`;
+const LoadMoreBtn = styled.button`
+  font-family: 'Syne', sans-serif; font-size: .8rem; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 1.5px;
+  color: ${C.green}; background: ${C.white};
+  border: 1.5px solid ${C.green}; padding: .6rem 1.4rem;
+  border-radius: 100px; cursor: pointer; transition: all .18s ease;
+  &:hover:not(:disabled) { background: ${C.green}; color: ${C.white}; }
+  &:disabled { opacity: .6; cursor: default; }
 `;
 
 const PostCard = styled.article`

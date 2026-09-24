@@ -6,14 +6,14 @@ export const revalidate = 60;
 
 const C = {
   white: '#ffffff',
-  border: '#e5e7eb',
-  greenLt: '#d1fae5',
-  green: '#10b981',
-  muted: '#f3f4f6',
-  dark: '#111827',
-  soft: '#6b7280',
-  danger: '#ef4444',
-  dangerLt: '#fef2f2',
+  border: '#d8d4cc',
+  greenLt: '#e4f1ea',
+  green: '#2d6a4f',
+  muted: '#eceae3',
+  dark: '#1a1a2e',
+  soft: '#7a7567',
+  danger: '#c0392b',
+  dangerLt: '#fdecea',
 };
 
 const BASE_URL = `${API_BASE}/api`;

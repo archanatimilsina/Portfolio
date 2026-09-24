@@ -5,20 +5,20 @@ export const revalidate = 60;
 const ENDPOINT = `${API_BASE}/api/music-vibes/`;
 
 const C = {
-  bg:         '#0d0d0f',
-  surface:    '#141416',
-  surfaceUp:  '#1c1c1f',
-  border:     '#2a2a2e',
-  borderHov:  '#3f3f46',
-  accent:     '#10b981',
-  accentDim:  '#0d9268',
-  accentGlow: 'rgba(16,185,129,0.15)',
-  accentText: '#6ee7b7',
-  white:      '#f4f4f5',
-  muted:      '#71717a',
-  dimmer:     '#52525b',
-  danger:     '#ef4444',
-  dangerDim:  'rgba(239,68,68,0.12)',
+  bg:         '#f6f5f0',
+  surface:    '#ffffff',
+  surfaceUp:  '#eceae3',
+  border:     '#d8d4cc',
+  borderHov:  '#c3bdb0',
+  accent:     '#2d6a4f',
+  accentDim:  '#245741',
+  accentGlow: 'rgba(45,106,79,0.15)',
+  accentText: '#2d6a4f',
+  white:      '#1a1a2e',
+  muted:      '#7a7567',
+  dimmer:     '#a8a396',
+  danger:     '#c0392b',
+  dangerDim:  'rgba(192,57,43,0.12)',
 };
 
 const GlobalStyle = createGlobalStyle`
@@ -135,7 +135,7 @@ const AddButton = styled.button`
   border-radius: 10px;
   border: 1.5px solid ${p => p.$open ? C.border : C.accent};
   background: ${p => p.$open ? C.surfaceUp : C.accent};
-  color: ${p => p.$open ? C.muted : '#000'};
+  color: ${p => p.$open ? C.muted : '#ffffff'};
   cursor: pointer;
   transition: all 0.2s ease;
   white-space: nowrap;
@@ -145,7 +145,7 @@ const AddButton = styled.button`
   &:hover {
     background: ${p => p.$open ? C.border : C.accentDim};
     border-color: ${p => p.$open ? C.borderHov : C.accentDim};
-    color: ${p => p.$open ? C.white : '#000'};
+    color: ${p => p.$open ? C.white : '#ffffff'};
     transform: translateY(-1px);
   }
   &:active { transform: translateY(0); }
@@ -159,14 +159,14 @@ const Btn = styled.button`
   border-radius: 8px;
   border: 1.5px solid ${p => p.$primary ? C.accent : C.border};
   background: ${p => p.$primary ? C.accent : 'transparent'};
-  color: ${p => p.$primary ? '#000' : C.muted};
+  color: ${p => p.$primary ? '#ffffff' : C.muted};
   cursor: pointer;
   transition: all 0.18s ease;
 
   &:hover {
     background: ${p => p.$primary ? C.accentDim : C.surfaceUp};
     border-color: ${p => p.$primary ? C.accentDim : C.borderHov};
-    color: ${p => p.$primary ? '#000' : C.white};
+    color: ${p => p.$primary ? '#ffffff' : C.white};
   }
   &:disabled { opacity: 0.45; cursor: not-allowed; }
 `;
@@ -355,7 +355,7 @@ const MusicDot = styled.div`
   height: 50px;
   border-radius: 13px;
   background: ${p => p.$c};
-  border: 1px solid rgba(255,255,255,0.06);
+  border: 1px solid rgba(26,26,46,0.08);
   display: flex;
   align-items: center;
   justify-content: center;

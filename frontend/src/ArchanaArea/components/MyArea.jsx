@@ -24,6 +24,7 @@ const C = {
   white:  "#ffffff",
   dark:   "#1a1a2e",
   green:  "#2d6a4f",
+  greenLt:"#e4f1ea",
   border: "#d8d4cc",
   muted:  "#eceae3",
   soft:   "#7a7567",
@@ -265,11 +266,22 @@ export default function MyArea({ onBack }) {
   const handleNavClick = (id) => setActiveSection(id);
   const goHero = () => setActiveSection(null);
 
+  const now = new Date();
+  const hour = now.getHours();
+  const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+  const moodLine = hour < 12
+    ? "A fresh start — let's make today count."
+    : hour < 17
+      ? 'Hope your day is unfolding beautifully.'
+      : 'Time to relax and create something you love.';
+  const todayLabel = now.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
+
   const SidebarMarkup = (
-    <Sidebar $open={sidebarOpen}>
+    <Sidebar $open={sidebarOpen} $top={activeSection ? 0 : 56}>
       <SBTop>
         <SBTag>Access Level · Root</SBTag>
         <SBTitle>Control Panel</SBTitle>
+        <SBUnlocked><span />Unlocked</SBUnlocked>
       </SBTop>
       <SBNav>
         <SBGroupLabel>Explore</SBGroupLabel>
@@ -345,10 +357,31 @@ export default function MyArea({ onBack }) {
 
         <Main $shifted={sidebarOpen}>
           <Hero>
-            <HeroChip><span />Restricted Zone</HeroChip>
-            <HeroTitle>Welcome <em>Archana</em></HeroTitle>
-            <HeroSub>How was your day?</HeroSub>
+            <HeroChip><span />{todayLabel}</HeroChip>
+            <HeroTitle>{greeting}, <em>Archana</em></HeroTitle>
+            <HeroSub>{moodLine}</HeroSub>
 
+            <WelcomeCard>
+              <WelcomeTop>
+                <WelcomeAvatar>AT</WelcomeAvatar>
+                <WelcomeCopy>
+                  <WelcomeTitle>Welcome back to your space 🌿</WelcomeTitle>
+                  <WelcomeDesc>
+                    Everything here is yours — your notes, blog, projects and little joys.
+                    Pick up right where you left off, or start something new today.
+                  </WelcomeDesc>
+                </WelcomeCopy>
+              </WelcomeTop>
+              <WelcomeLinks>
+                <WelcomeLink onClick={() => handleNavClick('blog')}>📰 Blog</WelcomeLink>
+                <WelcomeLink onClick={() => handleNavClick('notes')}>🎨 Notes</WelcomeLink>
+                <WelcomeLink onClick={() => handleNavClick('gallery')}>🐸 Gallery</WelcomeLink>
+                <WelcomeLink onClick={() => handleNavClick('todo')}>☃️ To-do</WelcomeLink>
+                <WelcomeLink onClick={() => handleNavClick('goals')}>🐞 Plan</WelcomeLink>
+              </WelcomeLinks>
+            </WelcomeCard>
+
+            <HeroHint>🔒 Type <strong>9988</strong> anywhere to unlock the control panel</HeroHint>
           </Hero>
 
           <DataSection>
@@ -550,7 +583,7 @@ const StatusBadge = styled.div`
 `;
 
 const Sidebar = styled.aside`
-  position:fixed;top:56px;left:0;bottom:0;width:268px;
+  position:fixed;top:${p=>p.$top ?? 56}px;left:0;bottom:0;width:268px;
   background:${C.dark};
   border-right:1px solid rgba(255,255,255,.06);
   z-index:250;display:flex;flex-direction:column;overflow:hidden;
@@ -628,9 +661,9 @@ const Main = styled.main`
 `;
 
 const Hero = styled.div`
-  height:calc(100vh - 56px);
+  min-height:calc(100vh - 56px);
   position:relative;display:flex;flex-direction:column;
-  align-items:center;padding-top:3.75rem;overflow:hidden;
+  align-items:center;padding:3.75rem 1.5rem 4rem;overflow:hidden;
 `;
 const HeroChip = styled.div`
   display:inline-flex;align-items:center;gap:.5rem;
@@ -661,6 +694,40 @@ const HeroHint = styled.div`
   font-family:'Syne',sans-serif;font-size:.68rem;font-weight:700;
   text-transform:uppercase;letter-spacing:1.5px;color:${C.soft};z-index:5;
   strong{color:${C.dark};margin-left:4px;}
+`;
+
+const WelcomeCard = styled.div`
+  margin-top:2.2rem;z-index:5;
+  width:min(680px, calc(100% - 3rem));
+  background:${C.white};
+  border:1.5px solid ${C.border};
+  border-radius:22px;
+  padding:1.6rem 1.7rem;
+  display:flex;flex-direction:column;gap:1.15rem;
+  box-shadow:0 20px 55px rgba(26,26,46,.08);
+  animation:${fadeUp} .7s ease both;
+`;
+const WelcomeTop = styled.div`display:flex;align-items:center;gap:1.05rem;`;
+const WelcomeAvatar = styled.div`
+  width:54px;height:54px;border-radius:16px;flex-shrink:0;
+  background:linear-gradient(135deg,${C.green},${C.accent});
+  color:#fff;display:flex;align-items:center;justify-content:center;
+  font-family:'Syne',sans-serif;font-weight:800;font-size:1.05rem;
+  box-shadow:0 10px 24px rgba(45,106,79,.28);
+`;
+const WelcomeCopy = styled.div`display:flex;flex-direction:column;gap:.3rem;`;
+const WelcomeTitle = styled.h2`
+  font-family:'Syne',sans-serif;font-size:1.08rem;font-weight:800;
+  color:${C.dark};letter-spacing:-.02em;
+`;
+const WelcomeDesc = styled.p`font-size:.86rem;color:${C.soft};line-height:1.65;`;
+const WelcomeLinks = styled.div`display:flex;flex-wrap:wrap;gap:.5rem;`;
+const WelcomeLink = styled.button`
+  font-family:'Syne',sans-serif;font-size:.72rem;font-weight:700;
+  letter-spacing:.4px;color:${C.green};background:${C.greenLt};
+  border:1.5px solid ${C.green}33;padding:.44rem .85rem;
+  border-radius:100px;cursor:pointer;transition:all .18s ease;
+  &:hover{background:${C.green};color:#fff;transform:translateY(-1px);}
 `;
 
 const BurstCore = styled.div`

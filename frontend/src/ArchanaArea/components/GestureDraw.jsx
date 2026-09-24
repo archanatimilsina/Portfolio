@@ -260,7 +260,7 @@ updateStats();
           style={{
             width: "0.5px",
             height: 20,
-            background: "var(--color-border-tertiary, #e5e5e5)",
+            background: "var(--color-border-tertiary, #d8d4cc)",
             margin: "0 2px",
           }}
         />
@@ -277,12 +277,12 @@ updateStats();
                   : "0.5px solid var(--color-border-secondary, #ccc)",
               background:
                 strokeSize === s.value
-                  ? "var(--color-background-secondary, #f5f5f5)"
+                  ? "var(--color-background-secondary, #eceae3)"
                   : "transparent",
               color:
                 strokeSize === s.value
                   ? "var(--color-text-primary, #111)"
-                  : "var(--color-text-secondary, #666)",
+                  : "var(--color-text-secondary, #7a7567)",
             }}
           >
             {s.label}
@@ -292,7 +292,7 @@ updateStats();
           style={{
             width: "1px",
             height: 20,
-            background: "var(--color-border-tertiary, #e5e5e5)",
+            background: "var(--color-border-tertiary, #d8d4cc)",
             margin: "0 2px",
           }}
         />
@@ -303,10 +303,10 @@ updateStats();
               ? "var(--color-background-info, #e8f0fb)"
               : "transparent",
             color: showPoints
-              ? "var(--color-text-info, #185FA5)"
-              : "var(--color-text-secondary, #666)",
+              ? "var(--color-text-info, #2d6a4f)"
+              : "var(--color-text-secondary, #7a7567)",
             border: showPoints
-              ? "0.5px solid var(--color-border-info, #185FA5)"
+              ? "0.5px solid var(--color-border-info, #2d6a4f)"
               : "0.5px solid var(--color-border-secondary, #ccc)",
           }}
           onClick={handleTogglePoints}
@@ -359,11 +359,11 @@ updateStats();
         style={{
         background: isFirst ? "var(--color-background-info, #e8f0fb)"
                       : isLast ? "var(--color-background-success, #e6f4f0)"
-                      : "var(--color-background-secondary, #f5f5f5)",
-        color: isFirst? "var(--color-text-info, #185FA5)"
+                      : "var(--color-background-secondary, #eceae3)",
+        color: isFirst? "var(--color-text-info, #2d6a4f)"
                       : isLast ? "var(--color-text-success, #0F6E56)"
-                      : "var(--color-text-secondary, #666)",
-        border: `0.5px solid ${isFirst ? "var(--color-border-info, #185FA5)" : isLast ? "var(--color-border-success, #0F6E56)" : "var(--color-border-tertiary, #e5e5e5)"}`,
+                      : "var(--color-text-secondary, #7a7567)",
+        border: `0.5px solid ${isFirst ? "var(--color-border-info, #2d6a4f)" : isLast ? "var(--color-border-success, #0F6E56)" : "var(--color-border-tertiary, #d8d4cc)"}`,
         }}
         >
 {p.x},{p.y}
@@ -390,12 +390,12 @@ const Toolbar = styled.div`
   flex-wrap: wrap;
   align-items: center;
   padding: 12px 6px;
-  border-bottom: 0.5px solid #e5e5e5;
+  border-bottom: 0.5px solid #d8d4cc;
   background-color: #fff;
 `;
 const TextSpan = styled.span`
   font-size: 12px;
-  color: #666;
+  color: #7a7567;
   letter-spacing: 0.02em;
 `;
 const ColorBtn = styled.button`
@@ -429,7 +429,7 @@ const ClearBtn = styled.button`
   cursor: pointer;
   font-size: 12px;
   background-color: transparent;
-  color: var(--color-text-secondary, #666);
+  color: var(--color-text-secondary, #7a7567);
 `;
 const CanvasContainer = styled.div`
   position: relative;
@@ -462,7 +462,7 @@ const HintDiv = styled.div`
 const HintSpan = styled.span`
   font-size: 13px;
   color: var(--color-text-tertiary, #aaa);
-  border: 0.5px dashed var(--color-border-tertiary, #e5e5e5);
+  border: 0.5px dashed var(--color-border-tertiary, #d8d4cc);
   padding: 8px 18px;
   border-radius: 20px;
 `;
@@ -471,7 +471,7 @@ const GestureDetailContainer = styled.div`
   display: flex;
   gap: 24px;
   padding: 10px 16px;
-  border-bottom: 0.5px solid var(--color-border-tertiary, #e5e5e5);
+  border-bottom: 0.5px solid var(--color-border-tertiary, #d8d4cc);
   background-color: var(--color-background-secondary, #f9f9f9);
 `;
 const GestureDetailDiv = styled.div`
@@ -495,7 +495,7 @@ const PointsContainer = styled.div`
  padding: 12px 16px ;
  h3{
     font-size: 12px;
-     color: var(--color-text-secondary, #666); 
+     color: var(--color-text-secondary, #7a7567); 
      margin-bottom: 8px;
     font-weight: 500;
  }

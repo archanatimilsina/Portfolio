@@ -23,15 +23,15 @@ const GlobalStyle = createGlobalStyle`
 `;
 
 const T = {
-  ink:     '#1a1410',
-  muted:   '#7c6f5e',
-  border:  '#ddd5c3',
-  cream:   '#fcf9f4',
-  warm:    '#f5f0e8',
-  tape:    'rgba(210,190,150,0.18)',
-  green:   '#2d7a5f',
-  red:     '#b5352a',
-  amber:   '#c28a1a',
+  ink:     '#1a1a2e',
+  muted:   '#7a7567',
+  border:  '#d8d4cc',
+  cream:   '#f6f5f0',
+  warm:    '#eceae3',
+  tape:    'rgba(212,175,55,0.18)',
+  green:   '#2d6a4f',
+  red:     '#c0392b',
+  amber:   '#d4af37',
 };
 
 const fadeUp = keyframes`

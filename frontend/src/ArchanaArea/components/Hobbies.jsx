@@ -14,14 +14,14 @@ const GlobalStyle = createGlobalStyle`
 
 const C = {
   white:    '#ffffff',
-  border:   '#e4e4e7',
-  green:    '#10b981',
-  greenLt:  '#eafaf1',
-  dark:     '#18181b',
-  soft:     '#71717a',
-  muted:    '#f4f4f5',
-  danger:   '#ef4444',
-  dangerLt: '#fef2f2',
+  border:   '#d8d4cc',
+  green:    '#2d6a4f',
+  greenLt:  '#e4f1ea',
+  dark:     '#1a1a2e',
+  soft:     '#7a7567',
+  muted:    '#eceae3',
+  danger:   '#c0392b',
+  dangerLt: '#fdecea',
 };
 
 

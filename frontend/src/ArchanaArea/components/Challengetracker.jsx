@@ -212,21 +212,21 @@ function downloadChallengeBadge(challenge, stats) {
    ============================================================ */
 
 const C = {
-  bg: '#f7faf8',
+  bg: '#f6f5f0',
   card: '#ffffff',
-  border: '#e3e9e5',
-  borderStrong: '#cfdbd3',
-  text: '#14251c',
-  muted: '#6b7d74',
-  soft: '#9aa8a1',
-  green: '#22c55e',
-  greenDark: '#16a34a',
-  greenLt: '#dcfce7',
-  amber: '#f59e0b',
-  amberLt: '#fef3c7',
-  danger: '#ef4444',
-  dangerLt: '#fef2f2',
-  fieldBg: '#f6f9f7',
+  border: '#d8d4cc',
+  borderStrong: '#c3bdb0',
+  text: '#1a1a2e',
+  muted: '#7a7567',
+  soft: '#a8a396',
+  green: '#2d6a4f',
+  greenDark: '#245741',
+  greenLt: '#e4f1ea',
+  amber: '#d4af37',
+  amberLt: '#fdf6dc',
+  danger: '#c0392b',
+  dangerLt: '#fdecea',
+  fieldBg: '#f1efe8',
 };
 
 const GlobalStyle = createGlobalStyle`

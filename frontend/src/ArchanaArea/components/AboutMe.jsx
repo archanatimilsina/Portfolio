@@ -6,20 +6,20 @@ const GlobalStyle = createGlobalStyle`
   @import url('https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Clash+Display:wght@400;500;600;700&display=swap');
 
   :root {
-    --bg: #07080D;
-    --bg-card: #0D0F17;
-    --bg-input: rgba(255,255,255,0.03);
-    --border: rgba(255,255,255,0.07);
-    --border-active: rgba(20,184,166,0.5);
-    --text-primary: #EDF2F7;
-    --text-secondary: #64748B;
-    --text-muted: #334155;
-    --teal: #14B8A6;
-    --teal-dim: rgba(20,184,166,0.12);
-    --teal-glow: rgba(20,184,166,0.25);
-    --amber: #F59E0B;
-    --red: #EF4444;
-    --green: #10B981;
+    --bg: #f6f5f0;
+    --bg-card: #ffffff;
+    --bg-input: #f0eee7;
+    --border: #d8d4cc;
+    --border-active: rgba(45,106,79,0.5);
+    --text-primary: #1a1a2e;
+    --text-secondary: #7a7567;
+    --text-muted: #a8a396;
+    --teal: #2d6a4f;
+    --teal-dim: rgba(45,106,79,0.12);
+    --teal-glow: rgba(45,106,79,0.25);
+    --amber: #d4af37;
+    --red: #c0392b;
+    --green: #52d68a;
     --radius: 8px;
     --ease: cubic-bezier(0.23,1,0.32,1);
     --font-mono: 'Space Mono', monospace;
@@ -682,7 +682,7 @@ const SubmitBtn = styled.button`
   border: none;
   border-radius: var(--radius);
   background: var(--teal);
-  color: #07080D;
+  color: #ffffff;
   font-weight: 700;
   cursor: pointer;
   display: flex;

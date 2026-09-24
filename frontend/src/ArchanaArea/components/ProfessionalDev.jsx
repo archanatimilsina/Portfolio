@@ -6,20 +6,20 @@ const GlobalStyle = createGlobalStyle`
   @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap');
 
   :root {
-    --bg:           #0c0e0f;
-    --bg-card:      #121518;
-    --bg-input:     rgba(255,255,255,0.04);
-    --border:       rgba(255,255,255,0.08);
-    --border-hover: rgba(255,255,255,0.18);
-    --text-primary:   #edf0f4;
-    --text-secondary: #7e8fa5;
-    --accent:       #a78bfa;
-    --accent-dim:   rgba(167,139,250,0.12);
-    --accent-glow:  rgba(167,139,250,0.25);
-    --danger:       #f87171;
-    --danger-dim:   rgba(248,113,113,0.12);
-    --gold:         #fbbf24;
-    --gold-dim:     rgba(251,191,36,0.12);
+    --bg:           #f6f5f0;
+    --bg-card:      #ffffff;
+    --bg-input:     #f0eee7;
+    --border:       #d8d4cc;
+    --border-hover: #c3bdb0;
+    --text-primary:   #1a1a2e;
+    --text-secondary: #7a7567;
+    --accent:       #2d6a4f;
+    --accent-dim:   rgba(45,106,79,0.12);
+    --accent-glow:  rgba(45,106,79,0.25);
+    --danger:       #c0392b;
+    --danger-dim:   rgba(192,57,43,0.12);
+    --gold:         #d4af37;
+    --gold-dim:     rgba(212,175,55,0.15);
     --ease:         cubic-bezier(0.23,1,0.32,1);
   }
 

@@ -68,21 +68,21 @@ const GlobalStyle = createGlobalStyle`
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
   :root {
-    --page-bg:     #ffffff;
-    --sidebar-bg:  #f5f5f7;
-    --border:      #e5e5ea;
-    --border-soft: #ececee;
-    --text:        #1d1d1f;
-    --muted:       #6e6e73;
-    --dimmer:      #a1a1a6;
-    --accent:      #007aff;
-    --accent-dim:  #0064d1;
-    --accent-soft: rgba(0,122,255,0.10);
-    --accent-ring: rgba(0,122,255,0.35);
-    --danger:      #ff3b30;
-    --danger-dim:  #e0342a;
-    --danger-soft: rgba(255,59,48,0.08);
-    --ok:          #34a853;
+    --page-bg:     #f6f5f0;
+    --sidebar-bg:  #eceae3;
+    --border:      #d8d4cc;
+    --border-soft: #e5e1d8;
+    --text:        #1a1a2e;
+    --muted:       #7a7567;
+    --dimmer:      #a8a396;
+    --accent:      #2d6a4f;
+    --accent-dim:  #245741;
+    --accent-soft: rgba(45,106,79,0.10);
+    --accent-ring: rgba(45,106,79,0.35);
+    --danger:      #c0392b;
+    --danger-dim:  #a53125;
+    --danger-soft: rgba(192,57,43,0.08);
+    --ok:          #2d6a4f;
     --radius-lg: 14px;
     --radius-md: 10px;
     --radius-sm: 8px;

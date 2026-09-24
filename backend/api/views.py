@@ -1,7 +1,8 @@
 from django.shortcuts import render
 from django.db import connection
-from django.db.models import F, Q, Count
+from django.db.models import F, Q, Count, Sum
 from rest_framework import generics, status
+from rest_framework.pagination import PageNumberPagination
 from .models import Challenge, ChallengeDay, PDFDocument, ProfessionalDevelopment, Project, AboutMe, DayLog, OperativeGoal, GoalDayStatus, ScrapbookStamp, OperativeNote, DreamWish, WatchlistItem, HobbyItem, MusicVibeItem, Task, BlogCategory, BlogPost, BlogComment
 from .serializers import ChallengeSerializer,PDFDocumentSerializer, InstantStatusSerializer, ProfessionalDevelopmentSerializer, ProjectSerializer, DreamWishSerializer, HobbyItemSerializer, MusicVibeItemSerializer, TaskSerializer, AboutMeSerializer, DayLogSerializer, OperativeNoteSerializer, ScrapbookStampSerializer, DreamWishSerializer, WatchlistItemSerializer, OperativeGoalSerializer, BlogCategorySerializer, BlogPostListSerializer, BlogPostDetailSerializer, BlogCommentSerializer, BlogImageUploadSerializer
 from django.core.files.storage import default_storage
@@ -329,9 +330,16 @@ class BlogCategoryRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPI
         return BlogCategory.objects.annotate(post_count=Count('posts'))
 
 
+class BlogPostPagination(PageNumberPagination):
+    page_size = 9
+    page_size_query_param = 'page_size'
+    max_page_size = 48
+
+
 class BlogPostListCreateAPIView(generics.ListCreateAPIView):
     serializer_class = BlogPostListSerializer
     parser_classes = [MultiPartParser, FormParser, JSONParser]
+    pagination_class = BlogPostPagination
 
     def get_serializer_class(self):
         # Writes need the `content` field, which the lightweight list
@@ -382,6 +390,8 @@ class BlogPostListCreateAPIView(generics.ListCreateAPIView):
         }
         if ordering in allowed:
             qs = qs.order_by(allowed[ordering])
+        else:
+            qs = qs.order_by('-is_featured', '-published_at', '-created_at')
 
         return qs
 
@@ -392,6 +402,26 @@ class BlogPostListCreateAPIView(generics.ListCreateAPIView):
         output = BlogPostDetailSerializer(post, context={'request': request})
         headers = self.get_success_headers(output.data)
         return Response(output.data, status=status.HTTP_201_CREATED, headers=headers)
+
+
+class BlogPostStatsAPIView(APIView):
+    """Cheap aggregate counters so the UI never has to load every post."""
+
+    def get(self, request):
+        agg = BlogPost.objects.aggregate(
+            total=Count('id'),
+            published=Count('id', filter=Q(status='published')),
+            drafts=Count('id', filter=Q(status='draft')),
+            views=Sum('views'),
+            likes=Sum('likes'),
+        )
+        return Response({
+            'total': agg['total'] or 0,
+            'published': agg['published'] or 0,
+            'drafts': agg['drafts'] or 0,
+            'views': agg['views'] or 0,
+            'likes': agg['likes'] or 0,
+        })
 
 
 class BlogPostRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView):
