@@ -360,28 +360,6 @@ export default function MyArea({ onBack }) {
             <HeroChip><span />{todayLabel}</HeroChip>
             <HeroTitle>{greeting}, <em>Archana</em></HeroTitle>
             <HeroSub>{moodLine}</HeroSub>
-
-            <WelcomeCard>
-              <WelcomeTop>
-                <WelcomeAvatar>AT</WelcomeAvatar>
-                <WelcomeCopy>
-                  <WelcomeTitle>Welcome back to your space 🌿</WelcomeTitle>
-                  <WelcomeDesc>
-                    Everything here is yours — your notes, blog, projects and little joys.
-                    Pick up right where you left off, or start something new today.
-                  </WelcomeDesc>
-                </WelcomeCopy>
-              </WelcomeTop>
-              <WelcomeLinks>
-                <WelcomeLink onClick={() => handleNavClick('blog')}>📰 Blog</WelcomeLink>
-                <WelcomeLink onClick={() => handleNavClick('notes')}>🎨 Notes</WelcomeLink>
-                <WelcomeLink onClick={() => handleNavClick('gallery')}>🐸 Gallery</WelcomeLink>
-                <WelcomeLink onClick={() => handleNavClick('todo')}>☃️ To-do</WelcomeLink>
-                <WelcomeLink onClick={() => handleNavClick('goals')}>🐞 Plan</WelcomeLink>
-              </WelcomeLinks>
-            </WelcomeCard>
-
-            <HeroHint>🔒 Type <strong>9988</strong> anywhere to unlock the control panel</HeroHint>
           </Hero>
 
           <DataSection>
@@ -685,49 +663,6 @@ const HeroSub = styled.p`
   font-family:'Syne',sans-serif;font-size:.7rem;font-weight:700;
   text-transform:uppercase;letter-spacing:3px;color:${C.soft};
   margin-top:.7rem;z-index:5;
-`;
-const HeroHint = styled.div`
-  margin-top:1.4rem;
-  display:inline-flex;align-items:center;gap:.5rem;
-  background:${C.white};border:1.5px solid ${C.border};
-  border-radius:100px;padding:.38rem 1rem;
-  font-family:'Syne',sans-serif;font-size:.68rem;font-weight:700;
-  text-transform:uppercase;letter-spacing:1.5px;color:${C.soft};z-index:5;
-  strong{color:${C.dark};margin-left:4px;}
-`;
-
-const WelcomeCard = styled.div`
-  margin-top:2.2rem;z-index:5;
-  width:min(680px, calc(100% - 3rem));
-  background:${C.white};
-  border:1.5px solid ${C.border};
-  border-radius:22px;
-  padding:1.6rem 1.7rem;
-  display:flex;flex-direction:column;gap:1.15rem;
-  box-shadow:0 20px 55px rgba(26,26,46,.08);
-  animation:${fadeUp} .7s ease both;
-`;
-const WelcomeTop = styled.div`display:flex;align-items:center;gap:1.05rem;`;
-const WelcomeAvatar = styled.div`
-  width:54px;height:54px;border-radius:16px;flex-shrink:0;
-  background:linear-gradient(135deg,${C.green},${C.accent});
-  color:#fff;display:flex;align-items:center;justify-content:center;
-  font-family:'Syne',sans-serif;font-weight:800;font-size:1.05rem;
-  box-shadow:0 10px 24px rgba(45,106,79,.28);
-`;
-const WelcomeCopy = styled.div`display:flex;flex-direction:column;gap:.3rem;`;
-const WelcomeTitle = styled.h2`
-  font-family:'Syne',sans-serif;font-size:1.08rem;font-weight:800;
-  color:${C.dark};letter-spacing:-.02em;
-`;
-const WelcomeDesc = styled.p`font-size:.86rem;color:${C.soft};line-height:1.65;`;
-const WelcomeLinks = styled.div`display:flex;flex-wrap:wrap;gap:.5rem;`;
-const WelcomeLink = styled.button`
-  font-family:'Syne',sans-serif;font-size:.72rem;font-weight:700;
-  letter-spacing:.4px;color:${C.green};background:${C.greenLt};
-  border:1.5px solid ${C.green}33;padding:.44rem .85rem;
-  border-radius:100px;cursor:pointer;transition:all .18s ease;
-  &:hover{background:${C.green};color:#fff;transform:translateY(-1px);}
 `;
 
 const BurstCore = styled.div`
